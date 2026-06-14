@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Superadmin Dashboard - SMK Ma'arif Talang</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -86,9 +87,40 @@
         @yield('content')
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-100 py-6 text-center text-xs text-slate-400 font-medium mt-auto">
-        &copy; {{ date('Y') }} SMK Ma'arif Talang. All rights reserved. &bull; Control Panel Superadmin v2.0
+    <!-- Footer Watermark -->
+    <footer class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-t border-indigo-800/40 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4 py-5">
+                <!-- Kiri: Logo + Nama Kampus -->
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl overflow-hidden border border-white/10 shadow-lg flex-shrink-0 bg-white/5 flex items-center justify-center">
+                        <img src="{{ asset('images/logo_kampus.jpg') }}"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                             alt="Logo Universitas Harkat Negeri"
+                             class="w-full h-full object-contain">
+                        <span style="display:none" class="w-full h-full bg-indigo-700 flex items-center justify-center text-white text-xs font-extrabold rounded-xl">UHN</span>
+                    </div>
+                    <div>
+                        <p class="text-white text-xs font-bold leading-tight">Universitas Harkat Negeri</p>
+                        <p class="text-indigo-400 text-[10px] font-medium mt-0.5 uppercase tracking-wide">Portal Superadmin</p>
+                    </div>
+                </div>
+
+                <!-- Tengah: Copyright -->
+                <div class="text-center hidden sm:block">
+                    <p class="text-slate-500 text-[10px] font-medium">&copy; {{ date('Y') }} All rights reserved</p>
+                </div>
+
+                <!-- Kanan: Nama + Tugas Akhir -->
+                <div class="text-right flex flex-col items-end gap-0.5">
+                    <p class="text-white text-xs font-bold">Fadlian Yusup</p>
+                    <span class="inline-flex items-center gap-1 bg-indigo-700/50 border border-indigo-600/40 text-indigo-300 text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422A12.083 12.083 0 0121 21H3a12.083 12.083 0 012.84-10.422L12 14z"/></svg>
+                        Tugas Akhir 2026
+                    </span>
+                </div>
+            </div>
+        </div>
     </footer>
 
     @stack('scripts')

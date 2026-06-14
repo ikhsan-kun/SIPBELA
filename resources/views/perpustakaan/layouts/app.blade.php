@@ -6,6 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>@yield('title', 'SIPB') — Sistem Informasi Perpustakaan</title>
     <meta name="description" content="Sistem Informasi Perpustakaan Sekolah" />
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -283,6 +284,38 @@
                 @yield('content')
             </div>
         </main>
+
+        <!-- ── Footer Watermark ── -->
+        <footer class="bg-green-950 border-t border-green-900 px-4 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4 max-w-7xl">
+                <!-- Kiri: Logo + Nama Kampus -->
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg overflow-hidden border border-green-800 flex-shrink-0 bg-green-900 flex items-center justify-center">
+                        <img src="{{ asset('images/logo_kampus.jpg') }}"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                             alt="Logo Universitas Harkat Negeri"
+                             class="w-full h-full object-contain">
+                        <span style="display:none" class="w-full h-full bg-green-700 flex items-center justify-center text-white text-[10px] font-extrabold rounded-lg">UHN</span>
+                    </div>
+                    <div>
+                        <p class="text-green-100 text-xs font-bold leading-tight">Universitas Harkat Negeri</p>
+                        <p class="text-green-600 text-[10px] font-medium mt-0.5">Sistem Informasi Perpustakaan</p>
+                    </div>
+                </div>
+
+                <!-- Kanan: Nama + Tugas Akhir -->
+                <div class="flex items-center gap-3">
+                    <span class="text-green-800 text-[10px] hidden sm:inline">&copy; {{ date('Y') }}</span>
+                    <div class="text-right">
+                        <p class="text-green-200 text-xs font-bold">Fadlian Yusup</p>
+                        <span class="inline-flex items-center gap-1 bg-green-800/50 border border-green-700/40 text-green-400 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422A12.083 12.083 0 0121 21H3a12.083 12.083 0 012.84-10.422L12 14z"/></svg>
+                            Tugas Akhir 2026
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 </div>
 

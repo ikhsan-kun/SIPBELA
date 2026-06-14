@@ -86,10 +86,10 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
                     Edit
                 </a>
-                <form action="{{ route('superadmin.admins.destroy', $admin) }}" method="POST" class="flex-1" onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun admin ini?');">
+                <form action="{{ route('superadmin.admins.destroy', $admin) }}" method="POST" class="flex-1 delete-admin-form" data-name="{{ $admin->name }}">
                     @csrf
                     @method('DELETE')
-                    <button type="submit" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-2 px-4 rounded-xl text-sm transition-all border border-rose-200 flex items-center justify-center gap-2">
+                    <button type="button" onclick="confirmDeleteAdmin(this)" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-2 px-4 rounded-xl text-sm transition-all border border-rose-200 flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         Hapus
                     </button>
@@ -104,3 +104,35 @@
 </div>
 
 @endsection
+
+@push('scripts')
+<script>
+    function confirmDeleteAdmin(btn) {
+        const form = btn.closest('.delete-admin-form');
+        const adminName = form.getAttribute('data-name');
+
+        Swal.fire({
+            title: 'Hapus Akun Admin?',
+            html: `Akun <strong>${adminName}</strong> akan dihapus secara permanen.<br><span style="font-size:0.85rem;color:#64748b">Tindakan ini tidak dapat dibatalkan.</span>`,
+            icon: 'warning',
+            iconColor: '#f43f5e',
+            showCancelButton: true,
+            confirmButtonText: '<svg xmlns="http://www.w3.org/2000/svg" class="inline w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg> Ya, Hapus!',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#e11d48',
+            cancelButtonColor: '#64748b',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-2xl shadow-2xl',
+                title: 'text-slate-800 font-extrabold',
+                confirmButton: 'rounded-xl font-bold px-5 py-2.5 text-sm',
+                cancelButton: 'rounded-xl font-bold px-5 py-2.5 text-sm',
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    }
+</script>
+@endpush

@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@yield('title', 'Login') — SIPB Perpustakaan</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <meta name="description" content="Sistem Informasi Perpustakaan Sekolah" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -59,7 +60,7 @@
         }
     </style>
 </head>
-<body class="auth-bg floating-shapes relative flex items-start justify-center py-8 px-4">
+<body class="auth-bg floating-shapes relative flex flex-col items-center justify-center min-h-screen py-8 px-4">
 
     <!-- Book decorative elements -->
     <div class="fixed top-10 left-10 opacity-10 pointer-events-none">
@@ -76,6 +77,38 @@
     <div class="w-full max-w-md relative z-10 my-auto">
         @yield('content')
     </div>
+
+    <!-- Footer Watermark -->
+    <footer class="fixed bottom-0 left-0 right-0 z-50">
+        <div class="flex items-center justify-between bg-black/20 backdrop-blur-md border-t border-white/10 px-6 sm:px-10 lg:px-16 py-4">
+            <!-- Kiri: Logo + Nama Kampus -->
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl overflow-hidden border border-white/20 flex-shrink-0 bg-white/10 flex items-center justify-center">
+                    <img src="{{ asset('images/logo_kampus.jpg') }}"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                         alt="Logo Universitas Harkat Negeri"
+                         class="w-full h-full object-contain">
+                    <span style="display:none" class="w-full h-full bg-green-600 flex items-center justify-center text-white text-[10px] font-extrabold rounded-xl">UHN</span>
+                </div>
+                <div>
+                    <p class="text-white text-xs font-bold leading-tight">Universitas Harkat Negeri</p>
+                    <p class="text-green-300 text-[10px] font-medium mt-0.5">SIPB &bull; Sistem Informasi Perpustakaan</p>
+                </div>
+            </div>
+
+            <!-- Tengah: Copyright (hanya desktop) -->
+            <p class="hidden lg:block text-green-700 text-[10px] font-medium">&copy; {{ date('Y') }} All rights reserved</p>
+
+            <!-- Kanan: Nama + Badge -->
+            <div class="text-right">
+                <p class="text-green-100 text-xs font-bold">Fadlian Yusup</p>
+                <span class="inline-flex items-center gap-1 bg-green-500/20 border border-green-400/30 text-green-300 text-[10px] font-semibold px-2.5 py-0.5 rounded-full mt-0.5">
+                    <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422A12.083 12.083 0 0121 21H3a12.083 12.083 0 012.84-10.422L12 14z"/></svg>
+                    Tugas Akhir 2026
+                </span>
+            </div>
+        </div>
+    </footer>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

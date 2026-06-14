@@ -4,8 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <title>@yield('title', 'SIPAB') — Sistem Informasi Peminjaman Alat Bengkel</title>
-    <meta name="description" content="Sistem Informasi Peminjaman Alat Bengkel SMK" />
+    <title>@yield('title', 'SIPBELA') — Sistem Peminjaman Alat Bengkel & Buku Perpustakaan</title>
+    <link rel="icon" href="{{ asset('images/logo.png') }}">
+    <meta name="description" content="Sistem Peminjaman Alat Bengkel dan Buku Perpustakaan SMK" />
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -158,7 +159,7 @@
                 </svg>
             </div>
             <div>
-                <h1 class="text-white font-bold text-lg tracking-tight leading-none">SIPAB</h1>
+                <h1 class="text-white font-bold text-lg tracking-tight leading-none">SIPBELA</h1>
                 <p class="text-slate-500 text-xs mt-1">Admin Workshop</p>
             </div>
         </div>
@@ -217,12 +218,12 @@
                 <!-- Mobile Menu Button (Optional) -->
                 <div class="flex lg:hidden items-center gap-3">
                      <div class="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white">S</div>
-                     <span class="font-bold text-slate-800">SIPAB</span>
+                     <span class="font-bold text-slate-800">SIPBELA</span>
                 </div>
 
                 <!-- Breadcrumbs/Page Title (Desktop) -->
                 <div class="hidden lg:flex flex-col">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SIPAB / SMK Ma'arif Talang</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">SIPBELA / SMK Ma'arif Talang</p>
                     <h2 class="text-sm font-bold text-slate-800">@yield('page-title', 'Dashboard')</h2>
                 </div>
 
@@ -316,6 +317,38 @@
                 @yield('content')
             </div>
         </main>
+
+        <!-- ── Footer Watermark ── -->
+        <footer class="bg-slate-900 border-t border-slate-800 px-4 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 py-4 max-w-7xl">
+                <!-- Kiri: Logo + Nama Kampus -->
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg overflow-hidden border border-slate-700 flex-shrink-0 bg-slate-800 flex items-center justify-center">
+                        <img src="{{ asset('images/logo_kampus.jpg') }}"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                             alt="Logo Universitas Harkat Negeri"
+                             class="w-full h-full object-contain">
+                        <span style="display:none" class="w-full h-full bg-blue-700 flex items-center justify-center text-white text-[10px] font-extrabold rounded-lg">UHN</span>
+                    </div>
+                    <div>
+                        <p class="text-slate-200 text-xs font-bold leading-tight">Universitas Harkat Negeri</p>
+                        <p class="text-slate-500 text-[10px] font-medium mt-0.5">Sistem Peminjaman Alat Bengkel & Buku Perpustakaan</p>
+                    </div>
+                </div>
+
+                <!-- Kanan: Nama + Tugas Akhir -->
+                <div class="flex items-center gap-3">
+                    <span class="text-slate-600 text-[10px] hidden sm:inline">&copy; {{ date('Y') }}</span>
+                    <div class="text-right">
+                        <p class="text-slate-300 text-xs font-bold">Fadlian Yusup</p>
+                        <span class="inline-flex items-center gap-1 bg-blue-900/50 border border-blue-800/40 text-blue-400 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422A12.083 12.083 0 0121 21H3a12.083 12.083 0 012.84-10.422L12 14z"/></svg>
+                            Tugas Akhir 2026
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 </div>
 

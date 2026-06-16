@@ -12,10 +12,12 @@ class PerpusPeminjaman extends Model
     protected $fillable = [
         'user_id',
         'buku_id',
+        'jumlah',
         'tanggal_pinjam',
         'batas_kembali',
         'status',
         'catatan',
+        'jumlah_perpanjangan',
     ];
 
     protected $casts = [
@@ -54,5 +56,11 @@ class PerpusPeminjaman extends Model
             return 0;
         }
         return (int) abs(now()->startOfDay()->diffInDays($this->batas_kembali));
+    }
+
+    // Helper: apakah bisa diperpanjang
+    public function bisaDiperpanjang(): bool
+    {
+        return $this->status === 'dipinjam' && $this->jumlah_perpanjangan == 0;
     }
 }

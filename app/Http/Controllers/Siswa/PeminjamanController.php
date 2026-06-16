@@ -11,73 +11,111 @@ use Illuminate\Support\Facades\DB;
 class PeminjamanController extends Controller
 {
     /**
-     * Form peminjaman: pilih barang & tanggal
+     * Halaman checkout keranjang: tampilkan semua item di keranjang
      */
     public function create(Request $request)
     {
-        // Hanya tampilkan barang dengan stok > 0 dan kondisi baik
-        $barangs = Barang::where('stok', '>', 0)
-            ->where('kondisi', 'baik')
-            ->orderBy('nama_barang')
-            ->get();
-
-        $selected_barang = null;
-        if ($request->filled('barang_id')) {
-            $selected_barang = Barang::find($request->barang_id);
+        $cart = session('cart_bengkel', []);
+        
+        // Handling struktur keranjang lama (array numerik) jika masih nyangkut
+        if (!empty($cart) && array_keys($cart) === range(0, count($cart) - 1)) {
+            $newCart = [];
+            foreach ($cart as $id) {
+                $newCart[$id] = 1;
+            }
+            $cart = $newCart;
+            session(['cart_bengkel' => $cart]);
         }
 
-        return view('siswa.peminjaman.create', compact('barangs', 'selected_barang'));
+        $cartItems = Barang::whereIn('id', array_keys($cart))->get();
+
+        return view('siswa.peminjaman.create', compact('cartItems', 'cart'));
     }
 
     /**
-     * LOGIKA KRITIS: Proses Peminjaman
+     * LOGIKA KRITIS: Proses Batch Checkout Peminjaman
+     * - Loop semua item di keranjang
      * - Gunakan DB Transaction + lockForUpdate untuk mencegah race condition
-     * - Validasi stok > 0 dalam transaksi
-     * - Decrement stok barang jika berhasil
+     * - Batas kembali = tanggal_pinjam + 5 hari (regulasi sekolah)
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'barang_id'     => 'required|exists:barangs,id',
             'tanggal_pinjam' => 'required|date|after_or_equal:today',
             'catatan'        => 'nullable|string|max:300',
         ]);
 
+        $cart = session('cart_bengkel', []);
+
+        if (empty($cart)) {
+            return back()->with('error', 'Keranjang kosong. Silakan tambahkan alat terlebih dahulu.');
+        }
+
+        $tanggalPinjam = $validated['tanggal_pinjam'];
+        $batasKembali  = \Carbon\Carbon::parse($tanggalPinjam)->addDays(5)->toDateString();
+
+        $berhasil = [];
+        $gagal    = [];
+
         try {
-            DB::transaction(function () use ($validated) {
-                // Lock baris barang untuk mencegah race condition
-                $barang = Barang::lockForUpdate()->findOrFail($validated['barang_id']);
+            DB::transaction(function () use ($cart, $validated, $tanggalPinjam, $batasKembali, &$berhasil, &$gagal) {
+                foreach ($cart as $barangId => $qty) {
+                    // Lock baris barang untuk mencegah race condition
+                    $barang = Barang::lockForUpdate()->find($barangId);
 
-                // Validasi stok real-time (cek ulang di dalam transaksi)
-                if ($barang->stok <= 0) {
-                    throw new \Exception("Stok barang \"{$barang->nama_barang}\" sudah habis. Peminjaman dibatalkan.");
+                    if (!$barang) {
+                        $gagal[] = "Barang ID {$barangId} tidak ditemukan.";
+                        continue;
+                    }
+
+                    // Validasi stok real-time
+                    if ($barang->stok < $qty) {
+                        $gagal[] = "Stok \"{$barang->nama_barang}\" tidak mencukupi untuk meminjam {$qty} unit. Sisa stok: {$barang->stok}.";
+                        continue;
+                    }
+
+                    // Validasi kondisi barang
+                    if ($barang->kondisi !== 'baik') {
+                        $gagal[] = "\"{$barang->nama_barang}\" sedang dalam kondisi {$barang->kondisi}.";
+                        continue;
+                    }
+
+                    // Kurangi stok barang sejumlah qty
+                    $barang->decrement('stok', $qty);
+
+                    // Buat 1 record peminjaman dengan jumlah sesuai qty
+                    Peminjaman::create([
+                        'user_id'        => auth()->id(),
+                        'barang_id'      => $barang->id,
+                        'jumlah'         => $qty,
+                        'tanggal_pinjam' => $tanggalPinjam,
+                        'batas_kembali'  => $batasKembali,
+                        'status'         => 'dipinjam',
+                        'catatan'        => $validated['catatan'] ?? null,
+                    ]);
+
+                    $berhasil[] = "{$barang->nama_barang} ({$qty} unit)";
                 }
-
-                // Validasi kondisi barang
-                if ($barang->kondisi !== 'baik') {
-                    throw new \Exception("Barang \"{$barang->nama_barang}\" sedang dalam kondisi {$barang->kondisi} dan tidak dapat dipinjam.");
-                }
-
-                // Kurangi stok barang
-                $barang->decrement('stok');
-
-                // Buat record peminjaman
-                Peminjaman::create([
-                    'user_id'        => auth()->id(),
-                    'barang_id'      => $barang->id,
-                    'tanggal_pinjam' => $validated['tanggal_pinjam'],
-                    'status'         => 'dipinjam',
-                    'catatan'        => $validated['catatan'] ?? null,
-                ]);
             });
 
-            return redirect()->route('siswa.riwayat')
-                ->with('success', 'Peminjaman berhasil diajukan! Segera ambil barang di bengkel.');
+            // Kosongkan keranjang setelah checkout
+            session()->forget('cart_bengkel');
+
+            if (!empty($gagal) && empty($berhasil)) {
+                return back()->with('error', 'Semua peminjaman gagal: ' . implode(', ', $gagal));
+            }
+
+            $message = count($berhasil) . ' alat berhasil dipinjam: ' . implode(', ', $berhasil) . '. Batas kembali: ' . $batasKembali . '.';
+            if (!empty($gagal)) {
+                $message .= ' Gagal: ' . implode(', ', $gagal);
+            }
+
+            return redirect()->route('siswa.riwayat')->with('success', $message);
 
         } catch (\Exception $e) {
             return back()
                 ->withInput()
-                ->with('error', $e->getMessage());
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 

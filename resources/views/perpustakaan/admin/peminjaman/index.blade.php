@@ -35,6 +35,7 @@
                     <th class="table-th">No</th>
                     <th class="table-th">Anggota</th>
                     <th class="table-th">Buku</th>
+                    <th class="table-th text-center">Jml</th>
                     <th class="table-th">Tgl Pinjam</th>
                     <th class="table-th">Batas Kembali</th>
                     <th class="table-th">Status</th>
@@ -53,6 +54,7 @@
                         <div class="font-medium text-slate-700">{{ Str::limit($p->buku->judul, 28) }}</div>
                         <div class="text-xs text-slate-400">{{ $p->buku->penulis }}</div>
                     </td>
+                    <td class="table-td text-center font-bold text-slate-700">{{ $p->jumlah ?? 1 }}</td>
                     <td class="table-td text-slate-600 text-sm">{{ $p->tanggal_pinjam->format('d/m/Y') }}</td>
                     <td class="table-td">
                         <span class="{{ $p->isTerlambat() ? 'text-red-600 font-bold' : 'text-slate-600' }} text-sm">

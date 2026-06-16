@@ -54,10 +54,15 @@
 
             <!-- Action -->
             @if($barang->stok > 0 && $barang->kondisi === 'baik')
-            <a href="{{ route('siswa.peminjaman.create', ['barang_id' => $barang->id]) }}"
-                class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">
-                Pinjam
-            </a>
+            @if(array_key_exists($barang->id, $cart))
+            <button onclick="addToCart({{ $barang->id }})" class="w-full bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg py-2 text-[10px] sm:text-xs font-semibold transition-colors">
+                Di Keranjang ({{ $cart[$barang->id] }}) <span class="text-xs font-normal">+</span>
+            </button>
+            @else
+            <button onclick="addToCart({{ $barang->id }})" class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">
+                + Keranjang
+            </button>
+            @endif
             @else
             <button disabled class="w-full bg-slate-100 text-slate-400 rounded-lg py-2 text-[10px] sm:text-xs font-semibold cursor-not-allowed">
                 N/A
@@ -75,13 +80,49 @@
 </div>
 @endif
 
+<!-- Floating Cart Badge -->
+<a href="{{ route('siswa.peminjaman.create') }}" id="floating-cart" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center group z-50">
+    <div class="relative">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span id="cart-counter" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">{{ count($cart) }}</span>
+    </div>
+    <span class="ml-2 hidden group-hover:block whitespace-nowrap font-medium pr-1">Checkout</span>
+</a>
+
 @push('scripts')
 <script>
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+    function addToCart(barangId) {
+        fetch('{{ route("siswa.keranjang.tambah") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ barang_id: barangId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Swal.fire({ icon: 'success', title: 'Berhasil', text: data.message, timer: 1500, showConfirmButton: false });
+                updateCartUI(); // Segera refresh dashboard untuk update tombol dan stok via API
+            } else {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({ icon: 'error', title: 'Oops...', text: 'Terjadi kesalahan saat menghubungi server.' });
+        });
+    }
+
     // ─── Real-time Polling & Pull-to-Refresh ────────────────────────────
     const POLL_INTERVAL = 5000;
 
-    function refreshDashboard() {
-        return fetch('{{ route("siswa.api.data") }}', {
+    function updateCartUI() {
+         return fetch('{{ route("siswa.api.data") }}', {
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(res => res.json())
@@ -91,12 +132,29 @@
             if (statsCards[0]) statsCards[0].textContent = data.stats.sedang_dipinjam;
             if (statsCards[1]) statsCards[1].textContent = data.stats.total_pinjam;
 
+            // Update cart counter
+            const counter = document.getElementById('cart-counter');
+            if (counter) counter.textContent = data.cart_count;
+
             // Update katalog barang
             const grid = document.getElementById('katalog-grid');
             if (grid && data.barangs) {
                 grid.innerHTML = data.barangs.map(b => {
                     const tersedia = b.stok > 0 && b.kondisi === 'baik';
                     const stokColor = b.stok > 2 ? 'emerald' : (b.stok > 0 ? 'amber' : 'red');
+                    const qtyInCart = data.cart[b.id] || 0;
+                    const inCart = qtyInCart > 0;
+                    let actionBtn = '';
+                    if (tersedia) {
+                        if (inCart) {
+                            actionBtn = `<button onclick="addToCart(${b.id})" class="w-full bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg py-2 text-[10px] sm:text-xs font-semibold transition-colors">Di Keranjang (${qtyInCart}) <span class="text-xs font-normal">+</span></button>`;
+                        } else {
+                            actionBtn = `<button onclick="addToCart(${b.id})" class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">+ Keranjang</button>`;
+                        }
+                    } else {
+                        actionBtn = `<button disabled class="w-full bg-slate-100 text-slate-400 rounded-lg py-2 text-[10px] sm:text-xs font-semibold cursor-not-allowed">N/A</button>`;
+                    }
+
                     return `
                     <div class="card p-3 sm:p-4 hover:shadow-md transition-all duration-200 group flex flex-col">
                         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 ${tersedia ? 'bg-blue-100' : 'bg-slate-100'}">
@@ -117,16 +175,17 @@
                                 </div>
                                 <span class="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase">${b.kondisi}</span>
                             </div>
-                            ${tersedia
-                                ? `<a href="/siswa/peminjaman/buat?barang_id=${b.id}" class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">Pinjam</a>`
-                                : `<button disabled class="w-full bg-slate-100 text-slate-400 rounded-lg py-2 text-[10px] sm:text-xs font-semibold cursor-not-allowed">N/A</button>`
-                            }
+                            ${actionBtn}
                         </div>
                     </div>`;
                 }).join('');
             }
         })
         .catch(err => console.warn('Polling error:', err));
+    }
+
+    function refreshDashboard() {
+       updateCartUI();
     }
 
     setInterval(refreshDashboard, POLL_INTERVAL);
@@ -149,9 +208,7 @@
         });
     }
 
-    // Deteksi sentuhan hanya di window
     window.addEventListener('touchstart', e => {
-        // Pastikan kita berada paling atas halaman
         if (window.scrollY <= 0) {
             touchStartY = e.touches[0].clientY;
         } else {
@@ -180,9 +237,7 @@
         }
     });
 
-    // Deteksi Scroll Mouse (Desktop)
     window.addEventListener('wheel', e => {
-        // Cek jika posisi mentok di atas dan scroll (wheel) masih didorong ke atas
         if (window.scrollY <= 0 && e.deltaY < -20 && !isRefreshing) {
             triggerRefresh();
         }

@@ -11,8 +11,10 @@ class Peminjaman extends Model
     protected $fillable = [
         'user_id',
         'barang_id',
+        'jumlah',
         'tanggal_pinjam',
         'tanggal_kembali',
+        'batas_kembali',
         'status',
         'catatan',
     ];
@@ -20,6 +22,7 @@ class Peminjaman extends Model
     protected $casts = [
         'tanggal_pinjam'  => 'date',
         'tanggal_kembali' => 'date',
+        'batas_kembali'   => 'date',
     ];
 
     // Relasi ke User (siswa peminjam)
@@ -44,5 +47,22 @@ class Peminjaman extends Model
     public function scopeSelesai($query)
     {
         return $query->where('status', 'dikembalikan');
+    }
+
+    // Helper: apakah sudah melewati batas kembali
+    public function isTerlambat(): bool
+    {
+        return $this->batas_kembali
+            && in_array($this->status, ['dipinjam', 'menunggu_konfirmasi'])
+            && now()->startOfDay()->gt($this->batas_kembali);
+    }
+
+    // Helper: hitung jumlah hari terlambat (dari sekarang)
+    public function hariTerlambatSekarang(): int
+    {
+        if (! $this->isTerlambat()) {
+            return 0;
+        }
+        return (int) abs(now()->startOfDay()->diffInDays($this->batas_kembali));
     }
 }

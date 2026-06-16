@@ -42,11 +42,8 @@ class PengembalianController extends Controller
             return back()->with('error', 'Peminjaman ini sudah dikembalikan sebelumnya.');
         }
 
-        $request->validate([
-            'tanggal_kembali' => 'required|date|after_or_equal:' . $peminjaman->tanggal_pinjam->toDateString(),
-        ]);
-
-        $tanggalKembali = Carbon::parse($request->tanggal_kembali)->startOfDay();
+        // Karena input tanggal_kembali dihapus di UI, kita gunakan hari ini
+        $tanggalKembali = Carbon::today()->startOfDay();
         $batasKembali   = $peminjaman->batas_kembali->startOfDay();
 
         // Hitung keterlambatan
@@ -70,8 +67,8 @@ class PengembalianController extends Controller
             // 2. Update status peminjaman
             $peminjaman->update(['status' => 'dikembalikan']);
 
-            // 3. Tambah stok buku kembali
-            $peminjaman->buku->increment('stok');
+            // 3. Tambah stok buku kembali sesuai jumlah
+            $peminjaman->buku->increment('stok', $peminjaman->jumlah ?? 1);
         });
 
         $msg = "Buku \"{$peminjaman->buku->judul}\" berhasil dikonfirmasi pengembaliannya.";

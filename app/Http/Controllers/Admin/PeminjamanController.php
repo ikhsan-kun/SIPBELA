@@ -45,12 +45,14 @@ class PeminjamanController extends Controller
                 'tanggal_kembali' => now()->toDateString(),
             ]);
 
-            // 2. Kembalikan stok barang (+1)
-            $peminjaman->barang->increment('stok');
+            // 2. Kembalikan stok barang sejumlah yang dipinjam
+            $peminjaman->barang->increment('stok', $peminjaman->jumlah ?? 1);
         });
 
+        $jumlahDikembalikan = $peminjaman->jumlah ?? 1;
+
         return back()->with('success',
-            "Pengembalian \"{$peminjaman->barang->nama_barang}\" atas nama {$peminjaman->user->name} berhasil dikonfirmasi. Stok bertambah 1."
+            "Pengembalian {$jumlahDikembalikan} unit \"{$peminjaman->barang->nama_barang}\" atas nama {$peminjaman->user->name} berhasil dikonfirmasi. Stok bertambah {$jumlahDikembalikan}."
         );
     }
 }

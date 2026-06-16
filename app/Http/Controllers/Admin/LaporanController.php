@@ -98,8 +98,30 @@ class LaporanController extends Controller
                 echo '<td>' . ucfirst($item->status) . '</td>';
                 echo '</tr>';
             }
+            echo '</tbody></table>';
             
-            echo '</tbody></table></body></html>';
+            // Tambahan tempat tanda tangan
+            echo '<br><br>';
+            echo '<table style="border: none;">';
+            echo '<tr>';
+            echo '<td colspan="5" style="border: none;"></td>';
+            echo '<td colspan="2" style="border: none; text-align: center;">Mengetahui,</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td colspan="5" style="border: none;"></td>';
+            echo '<td colspan="2" style="border: none; text-align: center;">Admin Bengkel</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td colspan="5" style="border: none;"></td>';
+            echo '<td colspan="2" style="border: none; height: 60px;"></td>'; // Space for signature
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td colspan="5" style="border: none;"></td>';
+            echo '<td colspan="2" style="border: none; text-align: center;">(.........................................)</td>';
+            echo '</tr>';
+            echo '</table>';
+
+            echo '</body></html>';
             fclose($output);
         };
 

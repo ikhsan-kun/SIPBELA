@@ -57,12 +57,24 @@
                 <p class="text-[9px] sm:text-xs text-slate-400 truncate">{{ $buku->penerbit }} @if($buku->tahun)· {{ $buku->tahun }}@endif</p>
             @endif
             
-            <div class="mt-auto pt-3">
+            <div class="mt-auto pt-3" id="action-container-{{ $buku->id }}">
+                @php
+                    $cart = session('cart_perpus', []);
+                    $qtyInCart = $cart[$buku->id] ?? 0;
+                    $inCart = $qtyInCart > 0;
+                @endphp
+
                 @if($buku->stok > 0)
-                    <a href="{{ route('perpustakaan.siswa.peminjaman.create', ['buku_id' => $buku->id]) }}"
-                        class="btn-perpus w-full justify-center text-[10px] sm:text-xs py-2 px-1">
-                        Pinjam Buku
-                    </a>
+                    @if($inCart)
+                        <button onclick="addToCart({{ $buku->id }})" class="w-full bg-green-100 text-green-700 hover:bg-green-200 rounded-lg py-2 text-[10px] sm:text-xs font-semibold transition-colors">
+                            Di Keranjang ({{ $qtyInCart }}) <span class="text-xs font-normal">+</span>
+                        </button>
+                    @else
+                        <button onclick="addToCart({{ $buku->id }})"
+                            class="btn-perpus w-full justify-center text-[10px] sm:text-xs py-2 px-1">
+                            + Keranjang
+                        </button>
+                    @endif
                 @else
                     <button disabled class="w-full text-center text-[10px] sm:text-xs py-2 bg-slate-100 text-slate-400 rounded-lg font-semibold cursor-not-allowed">
                         Stok Habis
@@ -82,4 +94,48 @@
 @if($bukus->hasPages())
 <div class="mt-6">{{ $bukus->links() }}</div>
 @endif
+
+<!-- Floating Cart Badge -->
+<a href="{{ route('perpustakaan.siswa.peminjaman.create') }}" id="floating-cart" class="fixed bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-all flex items-center justify-center group z-50">
+    <div class="relative">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span id="cart-counter" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">{{ count(session('cart_perpus', [])) > 0 ? array_sum(session('cart_perpus', [])) : 0 }}</span>
+    </div>
+    <span class="ml-2 hidden group-hover:block whitespace-nowrap font-medium pr-1">Checkout</span>
+</a>
+
+@push('scripts')
+<script>
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+    function addToCart(bukuId) {
+        fetch('{{ route("perpustakaan.siswa.keranjang.tambah") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ buku_id: bukuId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update badge cart counter
+                const badge = document.getElementById('cart-counter');
+                if (badge) badge.innerText = data.cart_count;
+
+                // Reload page to reflect UI state changes (or manually update innerHTML if preferred)
+                window.location.reload();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({ icon: 'error', title: 'Oops...', text: 'Terjadi kesalahan saat menghubungi server.' });
+        });
+    }
+</script>
+@endpush
 @endsection

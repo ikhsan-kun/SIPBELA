@@ -106,7 +106,30 @@ class LaporanController extends Controller
             echo '<td style="font-weight: bold; border: 1px solid #000; padding: 6px; background-color: #f9f9f9; color: #dc2626;">Rp ' . number_format($totalDenda, 0, ',', '.') . '</td>';
             echo '</tr>';
             
-            echo '</tbody></table></body></html>';
+            echo '</tbody></table>';
+
+            // Tambahan tempat tanda tangan
+            echo '<br><br>';
+            echo '<table style="border: none;">';
+            echo '<tr>';
+            echo '<td colspan="7" style="border: none;"></td>';
+            echo '<td colspan="3" style="border: none; text-align: center;">Mengetahui,</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td colspan="7" style="border: none;"></td>';
+            echo '<td colspan="3" style="border: none; text-align: center;">Admin Perpustakaan</td>';
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td colspan="7" style="border: none;"></td>';
+            echo '<td colspan="3" style="border: none; height: 60px;"></td>'; // Space for signature
+            echo '</tr>';
+            echo '<tr>';
+            echo '<td colspan="7" style="border: none;"></td>';
+            echo '<td colspan="3" style="border: none; text-align: center;">(.........................................)</td>';
+            echo '</tr>';
+            echo '</table>';
+
+            echo '</body></html>';
             fclose($output);
         };
 

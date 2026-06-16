@@ -56,20 +56,29 @@
                             </span>
                         </div>
                     </div>
-                    @if($p->isTerlambat())
-                        <span class="badge-terlambat flex-shrink-0">⚠ Terlambat</span>
-                    @else
-                        <span class="badge-dipinjam flex-shrink-0">Dipinjam</span>
-                    @endif
+                    <div class="flex flex-col items-end gap-2 flex-shrink-0">
+                        @if($p->isTerlambat())
+                            <span class="badge-terlambat">⚠ Terlambat</span>
+                        @else
+                            <span class="badge-dipinjam">Dipinjam</span>
+                        @endif
+
+                        @if($p->bisaDiperpanjang())
+                            <form action="{{ route('perpustakaan.siswa.peminjaman.perpanjang', $p->id) }}" method="POST" id="form-perpanjang-{{ $p->id }}">
+                                @csrf
+                                <button type="button" onclick="confirmPerpanjang({{ $p->id }})" class="text-xs bg-blue-600 text-white hover:bg-blue-700 font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    Perpanjang
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
             </div>
             @empty
             <div class="px-6 py-8 text-center text-slate-400">
                 <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13"/></svg>
                 Tidak ada buku yang sedang dipinjam.
-                <div class="mt-2">
-                    <a href="{{ route('perpustakaan.siswa.peminjaman.create') }}" class="text-green-600 text-sm font-semibold hover:underline">Pinjam sekarang →</a>
-                </div>
             </div>
             @endforelse
         </div>
@@ -101,7 +110,6 @@
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
                     <span class="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">{{ $buku->stok }} stok</span>
-                    <a href="{{ route('perpustakaan.siswa.peminjaman.create', ['buku_id' => $buku->id]) }}" class="btn-perpus py-1 px-3 text-xs">Pinjam</a>
                 </div>
             </div>
             @empty
@@ -110,8 +118,61 @@
         </div>
     </div>
 </div>
+
+<!-- Floating Cart Badge -->
+<a href="{{ route('perpustakaan.siswa.peminjaman.create') }}" id="floating-cart" class="fixed bottom-6 right-6 bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-all flex items-center justify-center group z-50">
+    <div class="relative">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span id="cart-counter" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">{{ count($cart) }}</span>
+    </div>
+    <span class="ml-2 hidden group-hover:block whitespace-nowrap font-medium pr-1">Checkout</span>
+</a>
+
 @push('scripts')
 <script>
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+    function addToCart(bukuId) {
+        fetch('{{ route("perpustakaan.siswa.keranjang.tambah") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ buku_id: bukuId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                refreshDashboard();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({ icon: 'error', title: 'Oops...', text: 'Terjadi kesalahan saat menghubungi server.' });
+        });
+    }
+
+    function confirmPerpanjang(id) {
+        Swal.fire({
+            title: 'Perpanjang Pinjaman?',
+            text: "Batas pengembalian buku ini akan ditambah 7 hari. Kamu hanya bisa memperpanjang 1 kali per peminjaman.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: 'Ya, Perpanjang!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('form-perpanjang-' + id).submit();
+            }
+        })
+    }
+
     // ─── Real-time Polling & Pull-to-Refresh ────────────────────────────
     const POLL_INTERVAL = 5000;
 
@@ -129,6 +190,10 @@
             if (elAktif) elAktif.textContent = data.aktif;
             if (elBuku)  elBuku.textContent  = data.totalBuku;
 
+            // Update cart counter
+            const counter = document.getElementById('cart-counter');
+            if (counter) counter.textContent = data.cart_count;
+
             // Update buku tersedia
             const bukuList = document.getElementById('buku-tersedia-list');
             if (bukuList && data.bukuTersedia) {
@@ -140,6 +205,7 @@
                             ? `<img src="/storage/${buku.gambar}" alt="${buku.judul}" class="w-full h-full object-contain">`
                             : `<div class="w-full h-full flex items-center justify-center text-slate-300"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13"/></svg></div>`;
                         const kategori = buku.kategori ? ` · <span class="text-green-600">${buku.kategori}</span>` : '';
+
                         return `
                         <div class="px-6 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
                             <div class="flex items-center gap-3 min-w-0">
@@ -153,7 +219,6 @@
                             </div>
                             <div class="flex items-center gap-2 flex-shrink-0">
                                 <span class="text-xs font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">${buku.stok} stok</span>
-                                <a href="/perpustakaan/siswa/peminjaman/buat?buku_id=${buku.id}" class="btn-perpus py-1 px-3 text-xs">Pinjam</a>
                             </div>
                         </div>`;
                     }).join('');
@@ -183,9 +248,7 @@
         });
     }
 
-    // Deteksi sentuhan hanya di window
     window.addEventListener('touchstart', e => {
-        // Pastikan kita berada paling atas halaman
         if (window.scrollY <= 0) {
             touchStartY = e.touches[0].clientY;
         } else {
@@ -214,9 +277,7 @@
         }
     });
 
-    // Deteksi Scroll Mouse (Desktop)
     window.addEventListener('wheel', e => {
-        // Cek jika posisi mentok di atas dan scroll (wheel) masih didorong ke atas
         if (window.scrollY <= 0 && e.deltaY < -20 && !isRefreshing) {
             triggerRefresh();
         }

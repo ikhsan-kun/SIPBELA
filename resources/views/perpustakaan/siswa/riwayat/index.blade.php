@@ -27,6 +27,7 @@
                 <tr>
                     <th class="table-th">No</th>
                     <th class="table-th">Buku</th>
+                    <th class="table-th text-center">Jml</th>
                     <th class="table-th">Tgl Pinjam</th>
                     <th class="table-th">Batas Kembali</th>
                     <th class="table-th">Tgl Dikembalikan</th>
@@ -46,6 +47,7 @@
                             <span class="text-xs text-green-600 font-medium">{{ $p->buku->kategori }}</span>
                         @endif
                     </td>
+                    <td class="table-td text-center font-bold text-slate-700">{{ $p->jumlah ?? 1 }}</td>
                     <td class="table-td text-slate-600 text-sm">{{ $p->tanggal_pinjam->format('d/m/Y') }}</td>
                     <td class="table-td">
                         <span class="{{ $p->isTerlambat() ? 'text-red-600 font-bold' : ($p->status === 'dipinjam' ? 'text-amber-600' : 'text-slate-600') }} text-sm">
@@ -91,15 +93,27 @@
                     </td>
                     <td class="table-td text-center">
                         @if($p->status === 'dipinjam')
-                            {{-- Tombol Kembalikan --}}
-                            <button
-                                onclick="openModal({{ $p->id }}, '{{ addslashes($p->buku->judul) }}', {{ $p->isTerlambat() ? 'true' : 'false' }}, {{ $p->hariTerlambatSekarang() }})"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
-                                </svg>
-                                Kembalikan
-                            </button>
+                            <div class="flex flex-col items-center gap-2">
+                                {{-- Tombol Kembalikan --}}
+                                <button
+                                    onclick="openModal({{ $p->id }}, '{{ addslashes($p->buku->judul) }}', {{ $p->isTerlambat() ? 'true' : 'false' }}, {{ $p->hariTerlambatSekarang() }})"
+                                    class="inline-flex items-center justify-center gap-1.5 w-full px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                                    </svg>
+                                    Kembalikan
+                                </button>
+
+                                @if($p->bisaDiperpanjang())
+                                    <form action="{{ route('perpustakaan.siswa.peminjaman.perpanjang', $p->id) }}" method="POST" id="form-perpanjang-{{ $p->id }}" class="w-full">
+                                        @csrf
+                                        <button type="button" onclick="confirmPerpanjang({{ $p->id }})" class="inline-flex items-center justify-center gap-1.5 w-full px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                            Perpanjang
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         @elseif($p->status === 'menunggu_konfirmasi')
                             <span class="text-xs text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">Pending Admin</span>
                         @else
@@ -224,6 +238,23 @@ function closeModal() {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     document.body.style.overflow = '';
+}
+
+function confirmPerpanjang(id) {
+    Swal.fire({
+        title: 'Perpanjang Pinjaman?',
+        text: "Batas pengembalian buku ini akan ditambah 7 hari. Kamu hanya bisa memperpanjang 1 kali per peminjaman.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#2563eb',
+        cancelButtonColor: '#94a3b8',
+        confirmButtonText: 'Ya, Perpanjang!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('form-perpanjang-' + id).submit();
+        }
+    })
 }
 
 // Tutup modal dengan Escape

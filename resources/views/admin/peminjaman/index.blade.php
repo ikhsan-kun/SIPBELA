@@ -34,7 +34,9 @@
                     <th class="table-th">No</th>
                     <th class="table-th">Siswa</th>
                     <th class="table-th">Barang</th>
+                    <th class="table-th text-center">Jml</th>
                     <th class="table-th">Tgl Pinjam</th>
+                    <th class="table-th">Batas Kembali</th>
                     <th class="table-th">Tgl Kembali</th>
                     <th class="table-th">Status</th>
                     <th class="table-th">Catatan</th>
@@ -54,10 +56,25 @@
                         </div>
                     </td>
                     <td class="table-td font-medium">{{ $p->barang->nama_barang }}</td>
+                    <td class="table-td text-center font-bold text-slate-700">{{ $p->jumlah ?? 1 }}</td>
                     <td class="table-td">{{ $p->tanggal_pinjam->format('d/m/Y') }}</td>
+                    <td class="table-td">
+                        @if($p->batas_kembali)
+                            <span class="{{ $p->isTerlambat() ? 'text-red-600 font-bold' : '' }}">
+                                {{ $p->batas_kembali->format('d/m/Y') }}
+                                @if($p->isTerlambat())
+                                    <br><span class="text-[10px] text-red-500">(Telat {{ $p->hariTerlambatSekarang() }} hari)</span>
+                                @endif
+                            </span>
+                        @else
+                            <span class="text-slate-400">—</span>
+                        @endif
+                    </td>
                     <td class="table-td">{{ $p->tanggal_kembali ? $p->tanggal_kembali->format('d/m/Y') : '-' }}</td>
                     <td class="table-td">
-                        @if($p->status === 'dipinjam')
+                        @if($p->isTerlambat())
+                            <span class="badge-diperbaiki !bg-red-100 !text-red-700">⚠ Terlambat</span>
+                        @elseif($p->status === 'dipinjam')
                             <span class="badge-dipinjam">⏳ Dipinjam</span>
                         @elseif($p->status === 'menunggu_konfirmasi')
                             <span class="badge-menunggu">⏳ Menunggu Konfirmasi</span>
@@ -70,7 +87,7 @@
                         @if(in_array($p->status, ['dipinjam', 'menunggu_konfirmasi']))
                         <form id="form-kembali-{{ $p->id }}" method="POST" action="{{ route('admin.peminjaman.kembali', $p->id) }}" class="flex justify-center">
                             @csrf
-                            <button type="button" onclick="confirmKembaliBengkel({{ $p->id }}, '{{ addslashes($p->barang->nama_barang) }}', '{{ addslashes($p->user->name) }}', '{{ $p->status }}')" class="{{ $p->status === 'menunggu_konfirmasi' ? 'btn-primary' : 'btn-success' }}" title="{{ $p->status === 'menunggu_konfirmasi' ? 'Konfirmasi Kembali' : 'Proses Kembali' }}">
+                            <button type="button" onclick="confirmKembaliBengkel({{ $p->id }}, '{{ addslashes($p->barang->nama_barang) }}', '{{ addslashes($p->user->name) }}', '{{ $p->status }}', {{ $p->jumlah ?? 1 }})" class="{{ $p->status === 'menunggu_konfirmasi' ? 'btn-primary' : 'btn-success' }}" title="{{ $p->status === 'menunggu_konfirmasi' ? 'Konfirmasi Kembali' : 'Proses Kembali' }}">
                                 {{ $p->status === 'menunggu_konfirmasi' ? 'Konfirmasi' : 'Proses Kembali' }}
                             </button>
                         </form>
@@ -81,7 +98,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="8" class="table-td text-center text-slate-400 py-10">
+                    <td colspan="10" class="table-td text-center text-slate-400 py-10">
                         Tidak ada data peminjaman ditemukan.
                     </td>
                 </tr>
@@ -99,12 +116,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function confirmKembaliBengkel(id, namaBarang, namaSiswa, status) {
+function confirmKembaliBengkel(id, namaBarang, namaSiswa, status, jumlah) {
     let confirmText = status === 'menunggu_konfirmasi' ? 'Ya, Konfirmasi Kembali!' : 'Ya, Proses Kembali!';
     let actionText = status === 'menunggu_konfirmasi' ? 'mengonfirmasi pengembalian' : 'memproses pengembalian';
     Swal.fire({
         title: 'Konfirmasi Pengembalian',
-        html: `Apakah Anda yakin ingin ${actionText} <strong class="text-blue-600">${namaBarang}</strong> oleh <strong>${namaSiswa}</strong>?<br><br><span class="text-xs text-slate-500">Stok barang akan bertambah 1 secara otomatis.</span>`,
+        html: `Apakah Anda yakin ingin ${actionText} <strong class="text-blue-600">${jumlah} unit ${namaBarang}</strong> oleh <strong>${namaSiswa}</strong>?<br><br><span class="text-xs text-slate-500">Stok barang akan bertambah ${jumlah} secara otomatis.</span>`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#10b981', // green-500

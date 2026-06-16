@@ -74,8 +74,16 @@ Route::prefix('perpustakaan')->name('perpustakaan.')->group(function () {
             // Kembalikan Buku (dari riwayat)
             Route::post('/peminjaman/{id}/kembali', [SiswaPeminjaman::class, 'prosesKembali'])->name('peminjaman.kembali');
 
+            // Perpanjang Peminjaman Buku
+            Route::post('/peminjaman/{id}/perpanjang', [SiswaPeminjaman::class, 'perpanjang'])->name('peminjaman.perpanjang');
+
+            // Keranjang Buku
+            Route::post('/keranjang/tambah', [SiswaDashboard::class, 'addToCart'])->name('keranjang.tambah');
+            Route::post('/keranjang/update/{bukuId}', [SiswaDashboard::class, 'updateCart'])->name('keranjang.update');
+            Route::delete('/keranjang/{bukuId}', [SiswaDashboard::class, 'removeFromCart'])->name('keranjang.hapus');
+            Route::get('/keranjang/data', [SiswaDashboard::class, 'getCart'])->name('keranjang.data');
+
             // API Real-time Data
             Route::get('/api/data', [SiswaDashboard::class, 'apiData'])->name('api.data');
         });
 });
-

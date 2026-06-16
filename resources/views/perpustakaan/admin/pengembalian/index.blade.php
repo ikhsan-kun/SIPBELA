@@ -33,6 +33,7 @@
                     <th class="table-th">No</th>
                     <th class="table-th">Anggota</th>
                     <th class="table-th">Buku</th>
+                    <th class="table-th text-center">Jml</th>
                     <th class="table-th">Tgl Pinjam</th>
                     <th class="table-th">Batas Kembali</th>
                     <th class="table-th">Status</th>
@@ -51,6 +52,7 @@
                         <div class="font-medium text-slate-700">{{ Str::limit($p->buku->judul, 28) }}</div>
                         <div class="text-xs text-slate-400">{{ $p->buku->penulis }}</div>
                     </td>
+                    <td class="table-td text-center font-bold text-slate-700">{{ $p->jumlah ?? 1 }}</td>
                     <td class="table-td text-slate-600">{{ $p->tanggal_pinjam->format('d/m/Y') }}</td>
                     <td class="table-td">
                         <span class="{{ $p->isTerlambat() ? 'text-red-600 font-bold' : 'text-slate-600' }}">
@@ -77,13 +79,9 @@
                         <form action="{{ route('perpustakaan.admin.pengembalian.proses', $p->id) }}" method="POST"
                                class="flex flex-col gap-2">
                             @csrf
-                            <input type="date" name="tanggal_kembali"
-                                value="{{ date('Y-m-d') }}"
-                                min="{{ $p->tanggal_pinjam->toDateString() }}"
-                                class="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-green-500 w-full">
                             <button type="button"
                                 class="btn-perpus text-xs py-1.5 justify-center"
-                                onclick="confirmKembaliPerpus(this.form, '{{ addslashes($p->buku->judul) }}', '{{ addslashes($p->user->name) }}', {{ $p->isTerlambat() ? 'true' : 'false' }}, {{ $p->hariTerlambatSekarang() }}, '{{ $p->status }}')">
+                                onclick="confirmKembaliPerpus(this.form, '{{ addslashes($p->buku->judul) }}', '{{ addslashes($p->user->name) }}', {{ $p->isTerlambat() ? 'true' : 'false' }}, {{ $p->hariTerlambatSekarang() }}, '{{ $p->status }}', {{ $p->jumlah ?? 1 }})">
                                 {{ $p->status === 'menunggu_konfirmasi' ? '✓ Konfirmasi' : '✓ Kembalikan' }}
                             </button>
                         </form>
@@ -91,7 +89,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="table-td text-center text-slate-400 py-10">
+                    <td colspan="8" class="table-td text-center text-slate-400 py-10">
                         <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Tidak ada buku yang perlu dikembalikan.
                     </td>
@@ -107,10 +105,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-function confirmKembaliPerpus(form, judulBuku, namaSiswa, isTerlambat, hariTerlambat, status) {
+function confirmKembaliPerpus(form, judulBuku, namaSiswa, isTerlambat, hariTerlambat, status, jumlah) {
     let confirmText = status === 'menunggu_konfirmasi' ? 'Ya, Konfirmasi Kembali!' : 'Ya, Kembalikan Buku!';
     let actionText = status === 'menunggu_konfirmasi' ? 'mengonfirmasi pengembalian' : 'memproses pengembalian';
-    let htmlContent = `Apakah Anda yakin ingin ${actionText} buku <strong class="text-green-700">"${judulBuku}"</strong> oleh <strong>${namaSiswa}</strong>?`;
+    let htmlContent = `Apakah Anda yakin ingin ${actionText} <strong class="text-green-700">${jumlah} unit "${judulBuku}"</strong> oleh <strong>${namaSiswa}</strong>?`;
     let icon = 'question';
 
     if (isTerlambat) {

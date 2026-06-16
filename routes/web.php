@@ -140,6 +140,12 @@ Route::prefix('siswa')
         // Materi Pembelajaran
         Route::get('/materi', [SiswaMateri::class, 'index'])->name('materi');
 
+        // Keranjang Peminjaman
+        Route::post('/keranjang/tambah', [SiswaDashboard::class, 'addToCart'])->name('keranjang.tambah');
+        Route::post('/keranjang/update/{barangId}', [SiswaDashboard::class, 'updateCart'])->name('keranjang.update');
+        Route::delete('/keranjang/{barangId}', [SiswaDashboard::class, 'removeFromCart'])->name('keranjang.hapus');
+        Route::get('/keranjang/data', [SiswaDashboard::class, 'getCart'])->name('keranjang.data');
+
         // API Real-time Data
         Route::get('/api/data', [SiswaDashboard::class, 'apiData'])->name('api.data');
     });

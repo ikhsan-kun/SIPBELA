@@ -34,7 +34,9 @@
                     <th class="table-th">No</th>
                     <th class="table-th">Nama Alat</th>
                     <th class="table-th">Kode</th>
+                    <th class="table-th">Jumlah</th>
                     <th class="table-th">Tgl Pinjam</th>
+                    <th class="table-th">Batas Kembali</th>
                     <th class="table-th">Tgl Kembali</th>
                     <th class="table-th">Status</th>
                     <th class="table-th">Catatan</th>
@@ -49,7 +51,20 @@
                     <td class="table-td">
                         <span class="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">{{ $p->barang->kode_barang }}</span>
                     </td>
+                    <td class="table-td">{{ $p->jumlah }}</td>
                     <td class="table-td">{{ $p->tanggal_pinjam->format('d/m/Y') }}</td>
+                    <td class="table-td">
+                        @if($p->batas_kembali)
+                            <span class="{{ $p->isTerlambat() ? 'text-red-600 font-bold' : '' }}">
+                                {{ $p->batas_kembali->format('d/m/Y') }}
+                                @if($p->isTerlambat())
+                                    <br><span class="text-[10px] text-red-500">(Telat {{ $p->hariTerlambatSekarang() }} hari)</span>
+                                @endif
+                            </span>
+                        @else
+                            <span class="text-slate-400">—</span>
+                        @endif
+                    </td>
                     <td class="table-td">
                         @if($p->tanggal_kembali)
                             {{ $p->tanggal_kembali->format('d/m/Y') }}
@@ -58,7 +73,9 @@
                         @endif
                     </td>
                     <td class="table-td">
-                        @if($p->status === 'dipinjam')
+                        @if($p->isTerlambat())
+                            <span class="badge-diperbaiki !bg-red-100 !text-red-700">⚠ Terlambat</span>
+                        @elseif($p->status === 'dipinjam')
                             <span class="badge-dipinjam">⏳ Sedang Dipinjam</span>
                         @elseif($p->status === 'menunggu_konfirmasi')
                             <span class="badge-menunggu">⏳ Menunggu Konfirmasi</span>

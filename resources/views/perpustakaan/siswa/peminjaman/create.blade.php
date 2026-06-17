@@ -32,7 +32,7 @@
             
             <div class="card divide-y divide-slate-100">
                 @foreach($cartItems as $buku)
-                <div class="p-4 flex items-center justify-between gap-4" id="cart-item-{{ $buku->id }}">
+                <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4" id="cart-item-{{ $buku->id }}">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-12 h-16 rounded overflow-hidden bg-slate-100 border border-slate-200 flex-shrink-0">
                             @if($buku->gambar)
@@ -48,17 +48,18 @@
                             <p class="text-xs text-slate-500 mt-0.5 truncate">{{ $buku->penulis }}</p>
                             <p class="text-[10px] text-slate-400 mt-0.5">ISBN: {{ $buku->isbn ?? '-' }}</p>
                         </div>
-                    <div class="flex items-center gap-4 flex-shrink-0">
+                    </div>
+                    <div class="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto mt-2 sm:mt-0 pt-2 sm:pt-0 border-t sm:border-0 border-slate-100">
                         <div class="flex items-center bg-slate-100 rounded-lg p-1">
-                            <button type="button" onclick="updateCart({{ $buku->id }}, -1)" class="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-green-600 hover:bg-green-50 transition-colors">
+                            <button type="button" onclick="updateCart({{ $buku->id }}, -1)" class="w-8 h-8 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-green-600 hover:bg-green-50 transition-colors">
                                 -
                             </button>
-                            <span id="qty-{{ $buku->id }}" class="w-8 text-center text-xs font-bold text-slate-800">{{ $cart[$buku->id] ?? 1 }}</span>
-                            <button type="button" onclick="updateCart({{ $buku->id }}, 1)" class="w-6 h-6 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-green-600 hover:bg-green-50 transition-colors">
+                            <span id="qty-{{ $buku->id }}" class="w-10 text-center text-sm font-bold text-slate-800">{{ $cart[$buku->id] ?? 1 }}</span>
+                            <button type="button" onclick="updateCart({{ $buku->id }}, 1)" class="w-8 h-8 flex items-center justify-center bg-white rounded shadow-sm text-slate-600 hover:text-green-600 hover:bg-green-50 transition-colors">
                                 +
                             </button>
                         </div>
-                        <button type="button" onclick="removeFromCart({{ $buku->id }})" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors flex-shrink-0" title="Hapus dari keranjang">
+                        <button type="button" onclick="removeFromCart({{ $buku->id }})" class="text-red-500 hover:bg-red-50 p-2.5 rounded-lg transition-colors flex-shrink-0" title="Hapus dari keranjang">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                         </button>
                     </div>

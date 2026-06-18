@@ -60,7 +60,7 @@
             </button>
             @else
             <button onclick="addToCart({{ $barang->id }})" class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">
-                + Keranjang
+                + Pinjam
             </button>
             @endif
             @else
@@ -149,7 +149,7 @@
                         if (inCart) {
                             actionBtn = `<button onclick="addToCart(${b.id})" class="w-full bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg py-2 text-[10px] sm:text-xs font-semibold transition-colors">Di Keranjang (${qtyInCart}) <span class="text-xs font-normal">+</span></button>`;
                         } else {
-                            actionBtn = `<button onclick="addToCart(${b.id})" class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">+ Keranjang</button>`;
+                            actionBtn = `<button onclick="addToCart(${b.id})" class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">+ Pinjam</button>`;
                         }
                     } else {
                         actionBtn = `<button disabled class="w-full bg-slate-100 text-slate-400 rounded-lg py-2 text-[10px] sm:text-xs font-semibold cursor-not-allowed">N/A</button>`;

@@ -72,7 +72,7 @@
                     @else
                         <button onclick="addToCart({{ $buku->id }})"
                             class="btn-perpus w-full justify-center text-[10px] sm:text-xs py-2 px-1">
-                            + Keranjang
+                            + Pinjam
                         </button>
                     @endif
                 @else

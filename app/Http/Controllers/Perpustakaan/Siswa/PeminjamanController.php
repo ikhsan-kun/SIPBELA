@@ -207,17 +207,13 @@ class PeminjamanController extends Controller
         }
 
         try {
-            // Tambahkan 7 hari ke batas kembali
-            $batasBaru = \Carbon\Carbon::parse($peminjaman->batas_kembali)->addDays(7)->toDateString();
-
             $peminjaman->update([
-                'batas_kembali' => $batasBaru,
-                'jumlah_perpanjangan' => $peminjaman->jumlah_perpanjangan + 1,
+                'status' => 'menunggu_perpanjangan',
             ]);
 
-            return back()->with('success', "Peminjaman buku \"{$peminjaman->buku->judul}\" berhasil diperpanjang hingga " . \Carbon\Carbon::parse($batasBaru)->format('d M Y') . ".");
+            return back()->with('success', "Pengajuan perpanjangan buku \"{$peminjaman->buku->judul}\" berhasil dikirim. Silakan temui admin dengan membawa buku fisik untuk dikonfirmasi.");
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperpanjang peminjaman: ' . $e->getMessage());
+            return back()->with('error', 'Gagal mengajukan perpanjangan: ' . $e->getMessage());
         }
     }
 }

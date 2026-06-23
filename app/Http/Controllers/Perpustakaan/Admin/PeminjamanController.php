@@ -34,4 +34,28 @@ class PeminjamanController extends Controller
 
         return view('perpustakaan.admin.peminjaman.index', compact('peminjamans'));
     }
+
+    public function perpanjang($id)
+    {
+        $peminjaman = PerpusPeminjaman::with('buku')->findOrFail($id);
+
+        if ($peminjaman->status !== 'menunggu_perpanjangan') {
+            return back()->with('error', 'Status peminjaman bukan menunggu perpanjangan.');
+        }
+
+        try {
+            // Tambahkan 7 hari ke batas kembali
+            $batasBaru = \Carbon\Carbon::parse($peminjaman->batas_kembali)->addDays(7)->toDateString();
+
+            $peminjaman->update([
+                'status' => 'dipinjam',
+                'batas_kembali' => $batasBaru,
+                'jumlah_perpanjangan' => $peminjaman->jumlah_perpanjangan + 1,
+            ]);
+
+            return back()->with('success', "Peminjaman buku \"{$peminjaman->buku->judul}\" atas nama \"{$peminjaman->user->name}\" berhasil dikonfirmasi dan diperpanjang hingga " . \Carbon\Carbon::parse($batasBaru)->format('d M Y') . ".");
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengkonfirmasi perpanjangan peminjaman: ' . $e->getMessage());
+        }
+    }
 }

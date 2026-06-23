@@ -39,6 +39,7 @@ Route::prefix('perpustakaan')->name('perpustakaan.')->group(function () {
 
             // Peminjaman — lihat semua transaksi
             Route::get('/peminjaman', [AdminPeminjaman::class, 'index'])->name('peminjaman.index');
+            Route::post('/peminjaman/{id}/perpanjang', [AdminPeminjaman::class, 'perpanjang'])->name('peminjaman.perpanjang');
 
             // Pengembalian — proses kembali + denda
             Route::get('/pengembalian', [PengembalianController::class, 'index'])->name('pengembalian.index');

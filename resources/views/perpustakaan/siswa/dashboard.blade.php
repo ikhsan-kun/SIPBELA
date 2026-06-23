@@ -158,19 +158,19 @@
 
     function confirmPerpanjang(id) {
         Swal.fire({
-            title: 'Perpanjang Pinjaman?',
-            text: "Batas pengembalian buku ini akan ditambah 7 hari. Kamu hanya bisa memperpanjang 1 kali per peminjaman.",
+            title: 'Ajukan Perpanjangan?',
+            text: "Pengajuan perpanjangan buku akan dikirim ke admin. Setelah ini, silakan temui admin perpustakaan dengan membawa buku fisik untuk dikonfirmasi.",
             icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#2563eb',
             cancelButtonColor: '#94a3b8',
-            confirmButtonText: 'Ya, Perpanjang!',
+            confirmButtonText: 'Ya, Ajukan!',
             cancelButtonText: 'Batal'
         }).then((result) => {
             if (result.isConfirmed) {
                 document.getElementById('form-perpanjang-' + id).submit();
             }
-        })
+        });
     }
 
     // ─── Real-time Polling & Pull-to-Refresh ────────────────────────────

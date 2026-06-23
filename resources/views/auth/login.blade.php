@@ -111,15 +111,7 @@
             </button>
         </form>
 
-        <!-- Link Daftar -->
-        <div class="mt-6 text-center border-t border-white/5 pt-4">
-            <p class="text-slate-500 text-xs font-semibold">
-                Belum punya akun?
-                <a href="{{ route('register') }}" class="text-blue-400 hover:text-blue-300 font-bold transition-colors">
-                    Daftar Akun Baru
-                </a>
-            </p>
-        </div>
+
         </div>
     </div>
 </div>

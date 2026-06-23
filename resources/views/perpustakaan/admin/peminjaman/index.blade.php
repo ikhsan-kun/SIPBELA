@@ -40,6 +40,7 @@
                     <th class="table-th">Batas Kembali</th>
                     <th class="table-th">Status</th>
                     <th class="table-th">Denda</th>
+                    <th class="table-th text-center">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -66,9 +67,11 @@
                     </td>
                     <td class="table-td">
                         @if($p->status === 'dikembalikan')
-                            <span class="badge-dikembalikan">Dikembalikan</span>
+                            <span class="badge-dikembalikan">✓ Dikembalikan</span>
                         @elseif($p->status === 'menunggu_konfirmasi')
-                            <span class="badge-menunggu">⏳ Menunggu Konfirmasi</span>
+                            <span class="badge-menunggu">⏳ Konfirmasi Kembali</span>
+                        @elseif($p->status === 'menunggu_perpanjangan')
+                            <span class="badge-menunggu">⏳ Konfirmasi Perpanjangan</span>
                         @elseif($p->isTerlambat())
                             <span class="badge-terlambat">⚠ Terlambat</span>
                         @else
@@ -88,10 +91,21 @@
                             <span class="text-slate-400 text-xs">-</span>
                         @endif
                     </td>
+                    <td class="table-td text-center">
+                        @if($p->status === 'menunggu_perpanjangan')
+                            <form action="{{ route('perpustakaan.admin.peminjaman.perpanjang', $p->id) }}" method="POST" class="inline-block" id="form-perpanjang-{{ $p->id }}">
+                                @csrf
+                                <button type="button" onclick="confirmPerpanjang({{ $p->id }}, '{{ addslashes($p->user->name) }}', '{{ addslashes($p->buku->judul) }}')" class="text-xs bg-blue-600 text-white hover:bg-blue-700 font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm flex items-center gap-1.5 mx-auto">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    Konfirmasi Perpanjang
+                                </button>
+                            </form>
+                        @endif
+                    </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="7" class="table-td text-center text-slate-400 py-10">Belum ada data peminjaman.</td>
+                    <td colspan="8" class="table-td text-center text-slate-400 py-10">Belum ada data peminjaman.</td>
                 </tr>
                 @endforelse
             </tbody>
@@ -101,4 +115,25 @@
     <div class="px-6 py-4 border-t border-slate-100">{{ $peminjamans->links() }}</div>
     @endif
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function confirmPerpanjang(id, namaSiswa, judulBuku) {
+        Swal.fire({
+            title: 'Konfirmasi Perpanjangan?',
+            html: `Apakah Anda yakin ingin mengkonfirmasi perpanjangan peminjaman buku <br><strong class="text-green-700">"${judulBuku}"</strong><br> oleh <strong>${namaSiswa}</strong> selama 7 hari?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#94a3b8',
+            confirmButtonText: 'Ya, Konfirmasi!',
+            cancelButtonText: 'Batal',
+            customClass: { popup: 'rounded-2xl' }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('form-perpanjang-' + id).submit();
+            }
+        })
+    }
+</script>
 @endsection

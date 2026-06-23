@@ -232,7 +232,7 @@
                     Katalog Buku
                 </a>
                 <a href="{{ route('perpustakaan.siswa.peminjaman.create') }}" class="flex items-center gap-2 px-6 py-4 text-sm font-semibold transition-all {{ request()->routeIs('perpustakaan.siswa.peminjaman.create') ? 'text-white border-b-2 border-green-500 bg-green-500/10' : 'text-green-300 hover:text-white' }}">
-                    Keranjang
+                    Pinjam Buku
                     @if(session()->has('cart_perpus') && count(session('cart_perpus')) > 0)
                     <span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">{{ count(session('cart_perpus')) }}</span>
                     @endif

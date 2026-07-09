@@ -190,4 +190,23 @@ if (app()->environment('local')) {
             jumlah:       1,
         );
     })->name('email.preview.keterlambatan');
+
+    // Route untuk mencoba MENGIRIM email secara langsung
+    Route::get('/test-send-email', function () {
+        try {
+            // Kita coba kirim ke email yang sama dengan pengirim untuk tes
+            $testEmail = env('MAIL_USERNAME'); 
+            
+            \Illuminate\Support\Facades\Mail::to($testEmail)->send(new \App\Mail\JatuhTempoReminder(
+                namaSiswa:    'Siswa Test',
+                namaBarang:   'Obeng Plus',
+                batasKembali: now()->addDay()->translatedFormat('d F Y'),
+                jumlah:       1,
+            ));
+            
+            return "Email berhasil dikirim ke: " . $testEmail . "! Silakan cek inbox Anda.";
+        } catch (\Exception $e) {
+            return "Gagal mengirim email. Error: " . $e->getMessage();
+        }
+    })->name('email.test.send');
 }

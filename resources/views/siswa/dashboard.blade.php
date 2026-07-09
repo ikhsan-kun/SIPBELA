@@ -21,13 +21,34 @@
     </div>
 </div>
 
+<!-- Search & Filter Bar -->
+<div class="mb-4 flex flex-col sm:flex-row gap-2">
+    <div class="relative flex-1">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input id="search-barang" type="text" placeholder="Cari nama alat atau kode (BRG-xxx)..."
+            class="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
+            oninput="filterKatalog()">
+    </div>
+    <div class="flex gap-2">
+        <button id="filter-semua" onclick="setFilter('semua')" class="filter-btn filter-active px-3 py-2 rounded-xl text-xs font-semibold border border-blue-500 bg-blue-500 text-white transition-all">Semua</button>
+        <button id="filter-tersedia" onclick="setFilter('tersedia')" class="filter-btn px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-blue-400 hover:text-blue-600 transition-all">Tersedia</button>
+        <button id="filter-na" onclick="setFilter('na')" class="filter-btn px-3 py-2 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-slate-400 transition-all">N/A</button>
+    </div>
+</div>
+
 <!-- Catalog Grid -->
 <div id="katalog-grid" class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
     @foreach($barangs as $barang)
-    <div class="card p-3 sm:p-4 hover:shadow-md transition-all duration-200 group flex flex-col">
+    @php
+        $tersedia = $barang->stok > 0 && $barang->kondisi === 'baik' && !$barang->butuhMaintenance();
+    @endphp
+    <div class="card p-3 sm:p-4 hover:shadow-md transition-all duration-200 group flex flex-col"
+         data-nama="{{ $barang->nama_barang }}"
+         data-kode="{{ $barang->kode_barang }}"
+         data-tersedia="{{ $tersedia ? '1' : '0' }}">
         <!-- Icon -->
-        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 {{ $barang->stok > 0 && $barang->kondisi === 'baik' ? 'bg-blue-100' : 'bg-slate-100' }}">
-            <svg class="w-5 h-5 sm:w-6 sm:h-6 {{ $barang->stok > 0 && $barang->kondisi === 'baik' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 {{ $tersedia ? 'bg-blue-100' : 'bg-slate-100' }}">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6 {{ $tersedia ? 'text-blue-600' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -53,20 +74,28 @@
             </div>
 
             <!-- Action -->
-            @if($barang->stok > 0 && $barang->kondisi === 'baik')
-            @if(array_key_exists($barang->id, $cart))
-            <button onclick="addToCart({{ $barang->id }})" class="w-full bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg py-2 text-[10px] sm:text-xs font-semibold transition-colors">
-                Di Keranjang ({{ $cart[$barang->id] }}) <span class="text-xs font-normal">+</span>
-            </button>
+            @php
+                $tersedia = $barang->stok > 0 && $barang->kondisi === 'baik' && !$barang->butuhMaintenance();
+            @endphp
+
+            @if($tersedia)
+                @if(array_key_exists($barang->id, $cart))
+                <button onclick="addToCart({{ $barang->id }})" class="w-full bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg py-2 text-[10px] sm:text-xs font-semibold transition-colors">
+                    Di Keranjang ({{ $cart[$barang->id] }}) <span class="text-xs font-normal">+</span>
+                </button>
+                @else
+                <button onclick="addToCart({{ $barang->id }})" class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">
+                    + Pinjam
+                </button>
+                @endif
             @else
-            <button onclick="addToCart({{ $barang->id }})" class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">
-                + Pinjam
-            </button>
-            @endif
-            @else
-            <button disabled class="w-full bg-slate-100 text-slate-400 rounded-lg py-2 text-[10px] sm:text-xs font-semibold cursor-not-allowed">
-                N/A
-            </button>
+                <button disabled class="w-full bg-slate-100 text-slate-400 rounded-lg py-2 text-[10px] sm:text-xs font-semibold cursor-not-allowed">
+                    @if($barang->butuhMaintenance())
+                        Maintenance
+                    @else
+                        N/A
+                    @endif
+                </button>
             @endif
         </div>
     </div>
@@ -80,6 +109,13 @@
 </div>
 @endif
 
+<!-- Pesan kosong saat search tidak ada hasil -->
+<div id="empty-search-msg" class="hidden text-center py-12 col-span-full">
+    <svg class="w-12 h-12 mx-auto mb-3 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    <p class="text-slate-400 text-sm font-medium">Tidak ada alat yang cocok dengan pencarian Anda.</p>
+    <button onclick="document.getElementById('search-barang').value=''; setFilter('semua');" class="mt-3 text-xs text-blue-600 hover:underline">Reset pencarian</button>
+</div>
+
 <!-- Floating Cart Badge -->
 <a href="{{ route('siswa.peminjaman.create') }}" id="floating-cart" class="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center group z-50">
     <div class="relative">
@@ -92,6 +128,50 @@
 @push('scripts')
 <script>
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    let activeFilter = 'semua';
+
+    function setFilter(filter) {
+        activeFilter = filter;
+        // Update button styles
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('filter-active', 'bg-blue-500', 'text-white', 'border-blue-500');
+            btn.classList.add('bg-white', 'text-slate-600', 'border-slate-200');
+        });
+        const activeBtn = document.getElementById('filter-' + filter);
+        if (activeBtn) {
+            activeBtn.classList.add('filter-active', 'bg-blue-500', 'text-white', 'border-blue-500');
+            activeBtn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+        }
+        filterKatalog();
+    }
+
+    function filterKatalog() {
+        const keyword = document.getElementById('search-barang').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('#katalog-grid > div[data-nama]');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const nama = card.getAttribute('data-nama').toLowerCase();
+            const kode = card.getAttribute('data-kode').toLowerCase();
+            const tersedia = card.getAttribute('data-tersedia') === '1';
+
+            const matchKeyword = !keyword || nama.includes(keyword) || kode.includes(keyword);
+            const matchFilter = activeFilter === 'semua' ||
+                                (activeFilter === 'tersedia' && tersedia) ||
+                                (activeFilter === 'na' && !tersedia);
+
+            if (matchKeyword && matchFilter) {
+                card.style.display = '';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Tampilkan pesan jika tidak ada hasil
+        const emptyMsg = document.getElementById('empty-search-msg');
+        if (emptyMsg) emptyMsg.classList.toggle('hidden', visibleCount > 0);
+    }
 
     function addToCart(barangId) {
         fetch('{{ route("siswa.keranjang.tambah") }}', {
@@ -140,7 +220,8 @@
             const grid = document.getElementById('katalog-grid');
             if (grid && data.barangs) {
                 grid.innerHTML = data.barangs.map(b => {
-                    const tersedia = b.stok > 0 && b.kondisi === 'baik';
+                    const butuhMaintenance = b.batas_pemakaian > 0 && b.jumlah_dipakai >= b.batas_pemakaian;
+                    const tersedia = b.stok > 0 && b.kondisi === 'baik' && !butuhMaintenance;
                     const stokColor = b.stok > 2 ? 'emerald' : (b.stok > 0 ? 'amber' : 'red');
                     const qtyInCart = data.cart[b.id] || 0;
                     const inCart = qtyInCart > 0;
@@ -152,11 +233,15 @@
                             actionBtn = `<button onclick="addToCart(${b.id})" class="btn-primary w-full justify-center text-[10px] sm:text-xs py-2 px-1">+ Pinjam</button>`;
                         }
                     } else {
-                        actionBtn = `<button disabled class="w-full bg-slate-100 text-slate-400 rounded-lg py-2 text-[10px] sm:text-xs font-semibold cursor-not-allowed">N/A</button>`;
+                        const btnText = butuhMaintenance ? 'Maintenance' : 'N/A';
+                        actionBtn = `<button disabled class="w-full bg-slate-100 text-slate-400 rounded-lg py-2 text-[10px] sm:text-xs font-semibold cursor-not-allowed">${btnText}</button>`;
                     }
 
                     return `
-                    <div class="card p-3 sm:p-4 hover:shadow-md transition-all duration-200 group flex flex-col">
+                    <div class="card p-3 sm:p-4 hover:shadow-md transition-all duration-200 group flex flex-col"
+                         data-nama="${b.nama_barang}"
+                         data-kode="${b.kode_barang}"
+                         data-tersedia="${tersedia ? '1' : '0'}">
                         <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-3 ${tersedia ? 'bg-blue-100' : 'bg-slate-100'}">
                             <svg class="w-5 h-5 sm:w-6 sm:h-6 ${tersedia ? 'text-blue-600' : 'text-slate-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
@@ -180,6 +265,7 @@
                     </div>`;
                 }).join('');
             }
+            filterKatalog(); // Re-apply search/filter after grid update
         })
         .catch(err => console.warn('Polling error:', err));
     }

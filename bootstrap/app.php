@@ -26,9 +26,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'role'       => \App\Http\Middleware\RoleMiddleware::class,
-            'role.perpus' => \App\Http\Middleware\PerpusRoleMiddleware::class,
-            'tkr'        => \App\Http\Middleware\TkrOnlyMiddleware::class,
+            'role'          => \App\Http\Middleware\RoleMiddleware::class,
+            'role.perpus'   => \App\Http\Middleware\PerpusRoleMiddleware::class,
+            'tkr'           => \App\Http\Middleware\TkrOnlyMiddleware::class,
+            'require.email' => \App\Http\Middleware\RequireEmail::class,
+            'force.password'=> \App\Http\Middleware\ForceChangePassword::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

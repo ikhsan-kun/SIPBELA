@@ -47,11 +47,11 @@
                     <div class="flex items-center gap-4">
                         <!-- Qty Selector -->
                         <div class="flex items-center bg-slate-100 rounded-lg p-1">
-                            <button type="button" onclick="updateQty({{ $barang->id }}, {{ $cart[$barang->id] - 1 }})" class="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-white rounded shadow-sm transition-colors" {{ $cart[$barang->id] <= 1 ? 'disabled' : '' }}>
+                            <button type="button" id="btn-min-{{ $barang->id }}" onclick="updateQty({{ $barang->id }}, -1, {{ $barang->stok }})" class="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-white rounded shadow-sm transition-colors" {{ $cart[$barang->id] <= 1 ? 'disabled' : '' }}>
                                 -
                             </button>
-                            <span class="w-8 text-center text-sm font-semibold text-slate-700">{{ $cart[$barang->id] }}</span>
-                            <button type="button" onclick="updateQty({{ $barang->id }}, {{ $cart[$barang->id] + 1 }})" class="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-white rounded shadow-sm transition-colors" {{ $cart[$barang->id] >= $barang->stok ? 'disabled' : '' }}>
+                            <span id="qty-val-{{ $barang->id }}" class="w-8 text-center text-sm font-semibold text-slate-700">{{ $cart[$barang->id] }}</span>
+                            <button type="button" id="btn-plus-{{ $barang->id }}" onclick="updateQty({{ $barang->id }}, 1, {{ $barang->stok }})" class="w-7 h-7 flex items-center justify-center text-slate-500 hover:bg-white rounded shadow-sm transition-colors" {{ $cart[$barang->id] >= $barang->stok ? 'disabled' : '' }}>
                                 +
                             </button>
                         </div>
@@ -112,7 +112,8 @@
                             class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none">{{ old('catatan') }}</textarea>
                     </div>
 
-                    <button type="submit" class="btn-primary w-full justify-center py-2.5 shadow-sm">
+                    <button type="button" onclick="showPeminjamanAlert()" class="btn-primary w-full justify-center py-2.5 shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Ajukan Peminjaman
                     </button>
                     <a href="{{ route('siswa.dashboard') }}" class="block text-center mt-3 text-sm text-slate-500 hover:text-blue-600 font-medium">
@@ -144,8 +145,12 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                // Refresh halaman untuk update daftar checkout
-                window.location.reload();
+                if(itemEl) itemEl.remove();
+                // If cart is empty, reload to show empty state
+                const remainingItems = document.querySelectorAll('[id^="cart-item-"]');
+                if (remainingItems.length === 0) {
+                    window.location.reload();
+                }
             } else {
                 Swal.fire('Gagal', data.message, 'error');
                 if(itemEl) itemEl.style.opacity = '1';
@@ -157,8 +162,21 @@
         });
     }
 
-    function updateQty(barangId, qty) {
-        if (qty < 1) return;
+    function updateQty(barangId, increment, maxStok) {
+        const qtyValEl = document.getElementById('qty-val-' + barangId);
+        const btnMin = document.getElementById('btn-min-' + barangId);
+        const btnPlus = document.getElementById('btn-plus-' + barangId);
+        
+        if (!qtyValEl) return;
+        let currentQty = parseInt(qtyValEl.innerText);
+        let newQty = currentQty + increment;
+
+        if (newQty < 1 || newQty > maxStok) return;
+
+        // Optimistic UI Update (Loading state)
+        qtyValEl.innerText = '...';
+        btnMin.disabled = true;
+        btnPlus.disabled = true;
         
         fetch(`/siswa/keranjang/update/${barangId}`, {
             method: 'POST',
@@ -167,19 +185,30 @@
                 'X-CSRF-TOKEN': csrfToken,
                 'Accept': 'application/json'
             },
-            body: JSON.stringify({ qty: qty })
+            body: JSON.stringify({ qty: newQty })
         })
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                window.location.reload();
+                // Update DOM on success
+                qtyValEl.innerText = newQty;
+                btnMin.disabled = (newQty <= 1);
+                btnPlus.disabled = (newQty >= maxStok);
             } else {
                 Swal.fire('Gagal', data.message, 'error');
+                // Revert
+                qtyValEl.innerText = currentQty;
+                btnMin.disabled = (currentQty <= 1);
+                btnPlus.disabled = (currentQty >= maxStok);
             }
         })
         .catch(err => {
             console.error(err);
             Swal.fire('Error', 'Terjadi kesalahan sistem', 'error');
+            // Revert
+            qtyValEl.innerText = currentQty;
+            btnMin.disabled = (currentQty <= 1);
+            btnPlus.disabled = (currentQty >= maxStok);
         });
     }
 
@@ -199,6 +228,53 @@
 
     // Init on load
     document.addEventListener('DOMContentLoaded', updateBatasKembali);
+
+    function showPeminjamanAlert() {
+        Swal.fire({
+            title: '<span style="font-size:1.1rem;font-weight:700;color:#1e293b">⚠️ Peraturan Peminjaman Alat</span>',
+            html: `
+                <div style="text-align:left;font-size:0.82rem;line-height:1.6">
+                    <p style="color:#475569;margin-bottom:10px">Harap baca dan pahami peraturan berikut sebelum mengajukan peminjaman:</p>
+
+                    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 14px;margin-bottom:12px">
+                        <p style="font-weight:700;color:#0369a1;margin-bottom:8px;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em">📋 Peraturan Peminjaman</p>
+                        <ol style="margin:0;padding-left:1.2rem;color:#1e40af;space-y:4px">
+                            <li style="margin-bottom:5px">Peminjam wajib mengembalikan alat dalam <strong>kondisi semula</strong> (tidak rusak/hilang).</li>
+                            <li style="margin-bottom:5px">Alat <strong>tidak diperkenankan dibawa keluar</strong> lingkungan sekolah tanpa seizin toolman.</li>
+                            <li style="margin-bottom:5px">Maksimal waktu peminjaman adalah <strong>5 Hari Kerja</strong> sejak tanggal peminjaman.</li>
+                        </ol>
+                    </div>
+
+                    <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px">
+                        <p style="font-weight:700;color:#dc2626;margin-bottom:8px;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em">💰 Ketentuan Denda</p>
+                        <div style="display:flex;align-items:flex-start;gap:8px;color:#991b1b">
+                            <span style="font-size:1.2rem;flex-shrink:0">⚠️</span>
+                            <p style="margin:0">Apabila alat yang dipinjam <strong>hilang</strong>, peminjam wajib membayar denda sebesar <strong>harga alat yang dipinjam</strong> kepada admin/toolman.</p>
+                        </div>
+                    </div>
+
+                    <p style="margin-top:12px;color:#64748b;font-size:0.78rem;text-align:center">Dengan mengklik <strong>"Ya, Saya Setuju"</strong>, Anda menyatakan telah membaca dan menyetujui seluruh peraturan di atas.</p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: '✅ Ya, Saya Setuju',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#64748b',
+            focusConfirm: false,
+            customClass: {
+                popup: 'swal-peminjaman-popup',
+                title: 'swal-peminjaman-title',
+            },
+            width: '480px',
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('checkout-form').submit();
+            }
+        });
+    }
 </script>
 @endpush
 @endsection

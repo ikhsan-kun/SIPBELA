@@ -39,6 +39,8 @@ Route::prefix('perpustakaan')->name('perpustakaan.')->group(function () {
 
             // Peminjaman — lihat semua transaksi
             Route::get('/peminjaman', [AdminPeminjaman::class, 'index'])->name('peminjaman.index');
+            Route::post('/peminjaman/{id}/setujui', [AdminPeminjaman::class, 'setujuiPinjam'])->name('peminjaman.setujui');
+            Route::post('/peminjaman/{id}/tolak', [AdminPeminjaman::class, 'tolakPinjam'])->name('peminjaman.tolak');
             Route::post('/peminjaman/{id}/perpanjang', [AdminPeminjaman::class, 'perpanjang'])->name('peminjaman.perpanjang');
 
             // Pengembalian — proses kembali + denda

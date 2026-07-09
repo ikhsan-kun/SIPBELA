@@ -32,6 +32,30 @@
         </div>
         @endif
 
+        @if(session('must_change_password'))
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    title: 'Keamanan Akun',
+                    text: 'Password Anda masih menggunakan password default (NIS). Apakah Anda ingin menggantinya sekarang demi keamanan?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Ganti Sekarang',
+                    cancelButtonText: 'Nanti Saja',
+                    background: '#1e293b',
+                    color: '#f8fafc'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{{ route('password.change') }}";
+                    }
+                });
+            });
+        </script>
+        @endif
+
         <!-- Cards Container -->
         <div class="grid md:grid-cols-2 gap-8">
             

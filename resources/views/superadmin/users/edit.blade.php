@@ -55,8 +55,16 @@
                 </div>
 
                 <div>
-                    <label for="email" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Email (Opsional)</label>
-                    <input type="email" id="email" name="email" placeholder="Contoh: ahmad@siswa.sch.id" value="{{ old('email', $user->email) }}"
+                    <label for="email" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                        Email Gmail Aktif
+                        @php $emailDefault = !$user->email || str_ends_with($user->email, '@siswa.sch.id'); @endphp
+                        @if($emailDefault)
+                            <span class="text-red-400 font-normal text-[10px] ml-1 normal-case">⚠ Belum diisi — siswa tidak bisa akses!</span>
+                        @else
+                            <span class="text-emerald-500 font-normal text-[10px] ml-1 normal-case">✓ Sudah diisi</span>
+                        @endif
+                    </label>
+                    <input type="email" id="email" name="email" placeholder="Contoh: siswa@gmail.com" value="{{ old('email', ($emailDefault ? '' : $user->email)) }}"
                         class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
                 </div>
             </div>

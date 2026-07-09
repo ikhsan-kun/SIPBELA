@@ -147,7 +147,15 @@
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                window.location.reload();
+                if(itemEl) itemEl.remove();
+                // Update badge di header jika ada
+                const badge = document.getElementById('cart-badge');
+                if (badge) badge.innerText = data.cart_count;
+                // Jika keranjang kosong, reload untuk tampilkan empty state
+                const remainingItems = document.querySelectorAll('[id^="cart-item-"]');
+                if (remainingItems.length === 0) {
+                    window.location.reload();
+                }
             } else {
                 Swal.fire('Gagal', data.message, 'error');
                 if(itemEl) itemEl.style.opacity = '1';

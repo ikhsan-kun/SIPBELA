@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Siswa;
 
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
+use App\Models\BengkelNotification;
 use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,17 +81,22 @@ class PeminjamanController extends Controller
                         continue;
                     }
 
-                    // Kurangi stok barang sejumlah qty
-                    $barang->decrement('stok', $qty);
+                    // Validasi siklus maintenance
+                    if ($barang->butuhMaintenance()) {
+                        $gagal[] = "\"{$barang->nama_barang}\" sedang membutuhkan jadwal servis/kalibrasi.";
+                        continue;
+                    }
 
-                    // Buat 1 record peminjaman dengan jumlah sesuai qty
+                    // Tidak lagi memotong stok di sini. Stok dipotong saat disetujui admin.
+
+                    // Buat 1 record peminjaman dengan status menunggu_persetujuan
                     Peminjaman::create([
                         'user_id'        => auth()->id(),
                         'barang_id'      => $barang->id,
                         'jumlah'         => $qty,
                         'tanggal_pinjam' => $tanggalPinjam,
                         'batas_kembali'  => $batasKembali,
-                        'status'         => 'dipinjam',
+                        'status'         => 'menunggu_persetujuan',
                         'catatan'        => $validated['catatan'] ?? null,
                     ]);
 
@@ -101,11 +107,27 @@ class PeminjamanController extends Controller
             // Kosongkan keranjang setelah checkout
             session()->forget('cart_bengkel');
 
-            if (!empty($gagal) && empty($berhasil)) {
-                return back()->with('error', 'Semua peminjaman gagal: ' . implode(', ', $gagal));
+            if (!empty($berhasil)) {
+                // Notifikasi ke Admin: ada pengajuan baru
+                BengkelNotification::adminBorrowRequest(
+                    auth()->user(),
+                    // Dummy peminjaman for reference — pakai yang terakhir dibuat
+                    Peminjaman::where('user_id', auth()->id())->latest()->first(),
+                    implode(', ', $berhasil)
+                );
+
+                // Notifikasi ke Siswa sendiri: peminjaman sedang menunggu konfirmasi
+                BengkelNotification::siswaPeminjamanMenunggu(
+                    auth()->id(),
+                    implode(', ', $berhasil)
+                );
             }
 
-            $message = count($berhasil) . ' alat berhasil dipinjam: ' . implode(', ', $berhasil) . '. Batas kembali: ' . $batasKembali . '.';
+            if (!empty($gagal) && empty($berhasil)) {
+                return back()->with('error', 'Semua pengajuan peminjaman gagal: ' . implode(', ', $gagal));
+            }
+
+            $message = count($berhasil) . ' pengajuan peminjaman alat berhasil dikirim: ' . implode(', ', $berhasil) . '. Silakan tunggu konfirmasi Admin.';
             if (!empty($gagal)) {
                 $message .= ' Gagal: ' . implode(', ', $gagal);
             }
@@ -148,11 +170,16 @@ class PeminjamanController extends Controller
         }
 
         try {
-            // Update status peminjaman menjadi menunggu_konfirmasi
-            // Tidak ada perubahan stok atau tanggal_kembali di sini, karena dilakukan oleh admin setelah konfirmasi fisik
             $peminjaman->update([
                 'status' => 'menunggu_konfirmasi',
             ]);
+
+            // Notifikasi ke Admin: ada pengembalian menunggu konfirmasi
+            BengkelNotification::adminReturnRequest(
+                auth()->user(),
+                $peminjaman,
+                $peminjaman->barang->nama_barang
+            );
 
             return back()->with('success', "Pengembalian barang \"{$peminjaman->barang->nama_barang}\" telah diajukan. Silakan serahkan barang ke admin bengkel untuk dikonfirmasi.");
         } catch (\Exception $e) {

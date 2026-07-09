@@ -10,6 +10,7 @@
         <form method="GET" class="flex gap-2 items-center flex-1">
             <select name="status" class="flex-1 sm:flex-none border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Semua Status</option>
+                <option value="menunggu_persetujuan" {{ request('status') === 'menunggu_persetujuan' ? 'selected' : '' }}>Menunggu Persetujuan</option>
                 <option value="dipinjam"     {{ request('status') === 'dipinjam'     ? 'selected' : '' }}>Sedang Dipinjam</option>
                 <option value="menunggu_konfirmasi" {{ request('status') === 'menunggu_konfirmasi' ? 'selected' : '' }}>Menunggu Konfirmasi</option>
                 <option value="dikembalikan" {{ request('status') === 'dikembalikan' ? 'selected' : '' }}>Sudah Dikembalikan</option>
@@ -26,7 +27,25 @@
         </a>
     </div>
 
-    <!-- Table -->
+    {{-- Banner: peminjaman menunggu persetujuan --}}
+    @php
+        $menungguCount = $peminjamans->getCollection()->where('status', 'menunggu_persetujuan')->count();
+        $hampirJatuhTempoItems = $peminjamans->getCollection()->filter(function($p) {
+            return $p->status === 'dipinjam'
+                && $p->batas_kembali
+                && now()->startOfDay()->diffInDays($p->batas_kembali, false) === 1;
+        });
+    @endphp
+
+    @if($menungguCount > 0)
+    <div class="mx-5 mt-4 flex items-start gap-3 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-sm">
+        <svg class="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+        <div>
+            <strong>⏳ {{ $menungguCount }} pengajuan peminjaman sedang menunggu konfirmasi admin.</strong>
+            <p class="text-xs text-amber-700 mt-0.5">Harap bersabar, admin akan memproses pengajuan Anda secepatnya. Anda akan mendapat notifikasi saat disetujui atau ditolak.</p>
+        </div>
+    </div>
+    @endif
     <div class="overflow-x-auto">
         <table class="w-full">
             <thead class="bg-slate-50">
@@ -75,6 +94,8 @@
                     <td class="table-td">
                         @if($p->isTerlambat())
                             <span class="badge-diperbaiki !bg-red-100 !text-red-700">⚠ Terlambat</span>
+                        @elseif($p->status === 'menunggu_persetujuan')
+                            <span class="badge-menunggu !bg-amber-100 !text-amber-700">⏳ Menunggu Persetujuan</span>
                         @elseif($p->status === 'dipinjam')
                             <span class="badge-dipinjam">⏳ Sedang Dipinjam</span>
                         @elseif($p->status === 'menunggu_konfirmasi')
@@ -92,6 +113,8 @@
                                 Kembalikan
                             </button>
                         </form>
+                        @elseif($p->status === 'menunggu_persetujuan')
+                        <span class="text-xs text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">⏳ Menunggu Admin</span>
                         @elseif($p->status === 'menunggu_konfirmasi')
                         <span class="text-xs text-amber-600 font-semibold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">Pending Admin</span>
                         @else
@@ -129,7 +152,7 @@
                     text: 'Apakah Anda yakin ingin mengembalikan ' + namaAlat + '?',
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonColor: '#3b82f6', // Sesuaikan dengan warna biru dari btn-info
+                    confirmButtonColor: '#3b82f6',
                     cancelButtonColor: '#64748b',
                     confirmButtonText: 'Ya, Kembalikan!',
                     cancelButtonText: 'Batal'
@@ -140,7 +163,33 @@
                 });
             });
         });
+
+        // Peringatan otomatis jika ada alat yang hampir jatuh tempo (H-1)
+        @if($hampirJatuhTempoItems->count() > 0)
+        @foreach($hampirJatuhTempoItems as $ht)
+        setTimeout(function() {
+            Swal.fire({
+                title: '<span style="color:#b45309;font-size:1rem;font-weight:700">⚠️ Pengingat Pengembalian!</span>',
+                html: `
+                    <div style="text-align:left;font-size:0.85rem">
+                        <p style="color:#374151;margin-bottom:10px">Alat berikut harus dikembalikan <strong style="color:#dc2626">besok</strong>:</p>
+                        <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px 14px;margin-bottom:10px">
+                            <p style="font-weight:700;color:#92400e;margin:0">🔧 {{ $ht->barang->nama_barang }}</p>
+                            <p style="color:#78350f;font-size:0.8rem;margin:4px 0 0">Batas Kembali: <strong>{{ $ht->batas_kembali->translatedFormat('d F Y') }}</strong></p>
+                        </div>
+                        <p style="color:#6b7280;font-size:0.8rem">Segera kembalikan ke admin bengkel sebelum batas waktu untuk menghindari denda!</p>
+                    </div>
+                `,
+                icon: 'warning',
+                confirmButtonText: '✅ Oke, Saya Mengerti',
+                confirmButtonColor: '#f59e0b',
+                width: '420px',
+            });
+        }, 800);
+        @endforeach
+        @endif
     });
+
 </script>
 @endpush
 @endsection

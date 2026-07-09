@@ -58,4 +58,38 @@ class PeminjamanController extends Controller
             return back()->with('error', 'Gagal mengkonfirmasi perpanjangan peminjaman: ' . $e->getMessage());
         }
     }
+
+    public function setujuiPinjam($id)
+    {
+        $peminjaman = PerpusPeminjaman::with('buku')->findOrFail($id);
+
+        if ($peminjaman->status !== 'menunggu_persetujuan') {
+            return back()->with('error', 'Status peminjaman tidak valid untuk disetujui.');
+        }
+
+        // Cek stok apakah cukup
+        if ($peminjaman->buku->stok < $peminjaman->jumlah) {
+            return back()->with('error', 'Gagal menyetujui: Stok buku saat ini tidak mencukupi.');
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($peminjaman) {
+            $peminjaman->update(['status' => 'dipinjam']);
+            $peminjaman->buku->decrement('stok', $peminjaman->jumlah);
+        });
+
+        return back()->with('success', "Peminjaman {$peminjaman->jumlah} buku \"{$peminjaman->buku->judul}\" atas nama {$peminjaman->user->name} berhasil disetujui. Stok telah dikurangi.");
+    }
+
+    public function tolakPinjam($id)
+    {
+        $peminjaman = PerpusPeminjaman::findOrFail($id);
+
+        if ($peminjaman->status !== 'menunggu_persetujuan') {
+            return back()->with('error', 'Status peminjaman tidak valid untuk ditolak.');
+        }
+
+        $peminjaman->update(['status' => 'ditolak']);
+
+        return back()->with('success', 'Pengajuan peminjaman berhasil ditolak.');
+    }
 }

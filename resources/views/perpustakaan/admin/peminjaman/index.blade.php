@@ -14,8 +14,11 @@
         <select name="status" class="border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
             <option value="">Semua Status</option>
             <option value="dipinjam" {{ request('status') == 'dipinjam' ? 'selected' : '' }}>Sedang Dipinjam</option>
-            <option value="menunggu_konfirmasi" {{ request('status') == 'menunggu_konfirmasi' ? 'selected' : '' }}>Menunggu Konfirmasi</option>
+            <option value="menunggu_persetujuan" {{ request('status') == 'menunggu_persetujuan' ? 'selected' : '' }}>Menunggu Persetujuan</option>
+            <option value="menunggu_konfirmasi" {{ request('status') == 'menunggu_konfirmasi' ? 'selected' : '' }}>Menunggu Konfirmasi Kembali</option>
+            <option value="menunggu_perpanjangan" {{ request('status') == 'menunggu_perpanjangan' ? 'selected' : '' }}>Menunggu Perpanjangan</option>
             <option value="dikembalikan" {{ request('status') == 'dikembalikan' ? 'selected' : '' }}>Sudah Dikembalikan</option>
+            <option value="ditolak" {{ request('status') == 'ditolak' ? 'selected' : '' }}>Ditolak</option>
         </select>
         <label class="flex items-center gap-2 text-sm text-slate-600 border border-slate-200 rounded-xl px-4 py-2.5 cursor-pointer hover:bg-slate-50">
             <input type="checkbox" name="terlambat" value="1" {{ request('terlambat') ? 'checked' : '' }}
@@ -68,10 +71,14 @@
                     <td class="table-td">
                         @if($p->status === 'dikembalikan')
                             <span class="badge-dikembalikan">✓ Dikembalikan</span>
+                        @elseif($p->status === 'menunggu_persetujuan')
+                            <span class="badge-menunggu !bg-yellow-100 !text-yellow-700">⌛ Menunggu Persetujuan</span>
                         @elseif($p->status === 'menunggu_konfirmasi')
                             <span class="badge-menunggu">⏳ Konfirmasi Kembali</span>
                         @elseif($p->status === 'menunggu_perpanjangan')
                             <span class="badge-menunggu">⏳ Konfirmasi Perpanjangan</span>
+                        @elseif($p->status === 'ditolak')
+                            <span class="badge-terlambat !bg-red-100 !text-red-700">❌ Ditolak</span>
                         @elseif($p->isTerlambat())
                             <span class="badge-terlambat">⚠ Terlambat</span>
                         @else
@@ -92,7 +99,24 @@
                         @endif
                     </td>
                     <td class="table-td text-center">
-                        @if($p->status === 'menunggu_perpanjangan')
+                        @if($p->status === 'menunggu_persetujuan')
+                        <div class="flex items-center justify-center gap-2">
+                            <form method="POST" action="{{ route('perpustakaan.admin.peminjaman.setujui', $p->id) }}" id="form-setujui-{{ $p->id }}">
+                                @csrf
+                                <button type="button" class="text-xs bg-green-600 text-white hover:bg-green-700 font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                                    onclick="confirmSetujuiPerpus({{ $p->id }}, '{{ addslashes($p->buku->judul) }}', '{{ addslashes($p->user->name) }}', {{ $p->jumlah ?? 1 }})">
+                                    Setujui
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('perpustakaan.admin.peminjaman.tolak', $p->id) }}" id="form-tolak-{{ $p->id }}">
+                                @csrf
+                                <button type="button" class="text-xs bg-red-600 text-white hover:bg-red-700 font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                                    onclick="confirmTolakPerpus({{ $p->id }}, '{{ addslashes($p->buku->judul) }}', '{{ addslashes($p->user->name) }}')">
+                                    Tolak
+                                </button>
+                            </form>
+                        </div>
+                        @elseif($p->status === 'menunggu_perpanjangan')
                             <form action="{{ route('perpustakaan.admin.peminjaman.perpanjang', $p->id) }}" method="POST" class="inline-block" id="form-perpanjang-{{ $p->id }}">
                                 @csrf
                                 <button type="button" onclick="confirmPerpanjang({{ $p->id }}, '{{ addslashes($p->user->name) }}', '{{ addslashes($p->buku->judul) }}')" class="text-xs bg-blue-600 text-white hover:bg-blue-700 font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm flex items-center gap-1.5 mx-auto">
@@ -118,6 +142,44 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    function confirmSetujuiPerpus(id, judulBuku, namaSiswa, jumlah) {
+        Swal.fire({
+            title: 'Setujui Peminjaman?',
+            html: `Anda akan menyetujui peminjaman buku <strong class="text-green-700">"${judulBuku}"</strong> oleh <strong>${namaSiswa}</strong>.<br><br><span class="text-xs text-slate-500">Stok buku akan berkurang ${jumlah} eksemplar secara otomatis.</span>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '✓ Ya, Setujui!',
+            cancelButtonText: 'Batal',
+            background: '#ffffff',
+            customClass: { popup: 'rounded-2xl' }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('form-setujui-' + id).submit();
+            }
+        });
+    }
+
+    function confirmTolakPerpus(id, judulBuku, namaSiswa) {
+        Swal.fire({
+            title: 'Tolak Peminjaman?',
+            html: `Anda akan menolak pengajuan peminjaman buku <strong class="text-red-700">"${judulBuku}"</strong> oleh <strong>${namaSiswa}</strong>.<br><br><span class="text-xs text-slate-500">Stok buku tidak akan berubah.</span>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '✕ Ya, Tolak!',
+            cancelButtonText: 'Batal',
+            background: '#ffffff',
+            customClass: { popup: 'rounded-2xl' }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('form-tolak-' + id).submit();
+            }
+        });
+    }
+
     function confirmPerpanjang(id, namaSiswa, judulBuku) {
         Swal.fire({
             title: 'Konfirmasi Perpanjangan?',

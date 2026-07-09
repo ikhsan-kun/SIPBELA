@@ -13,8 +13,10 @@
             <select name="status" class="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Semua Status</option>
                 <option value="dipinjam"     {{ request('status') === 'dipinjam'     ? 'selected' : '' }}>Dipinjam</option>
+                <option value="menunggu_persetujuan" {{ request('status') === 'menunggu_persetujuan' ? 'selected' : '' }}>Menunggu Persetujuan</option>
                 <option value="menunggu_konfirmasi" {{ request('status') === 'menunggu_konfirmasi' ? 'selected' : '' }}>Menunggu Konfirmasi</option>
                 <option value="dikembalikan" {{ request('status') === 'dikembalikan' ? 'selected' : '' }}>Dikembalikan</option>
+                <option value="ditolak" {{ request('status') === 'ditolak' ? 'selected' : '' }}>Ditolak</option>
             </select>
             <button type="submit" class="btn-primary flex items-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -72,19 +74,40 @@
                     </td>
                     <td class="table-td">{{ $p->tanggal_kembali ? $p->tanggal_kembali->format('d/m/Y') : '-' }}</td>
                     <td class="table-td">
-                        @if($p->isTerlambat())
+                        @if($p->isTerlambat() && $p->status === 'dipinjam')
                             <span class="badge-diperbaiki !bg-red-100 !text-red-700">⚠ Terlambat</span>
                         @elseif($p->status === 'dipinjam')
                             <span class="badge-dipinjam">⏳ Dipinjam</span>
+                        @elseif($p->status === 'menunggu_persetujuan')
+                            <span class="badge-menunggu !bg-yellow-100 !text-yellow-700">⌛ Menunggu Persetujuan</span>
                         @elseif($p->status === 'menunggu_konfirmasi')
                             <span class="badge-menunggu">⏳ Menunggu Konfirmasi</span>
+                        @elseif($p->status === 'ditolak')
+                            <span class="badge-diperbaiki !bg-red-100 !text-red-700">❌ Ditolak</span>
                         @else
                             <span class="badge-dikembalikan">✓ Dikembalikan</span>
                         @endif
                     </td>
                     <td class="table-td text-slate-400 max-w-[150px] truncate">{{ $p->catatan ?? '-' }}</td>
                     <td class="table-td text-center">
-                        @if(in_array($p->status, ['dipinjam', 'menunggu_konfirmasi']))
+                        @if($p->status === 'menunggu_persetujuan')
+                        <div class="flex items-center justify-center gap-2">
+                            <form method="POST" action="{{ route('admin.peminjaman.setujui', $p->id) }}" id="form-setujui-{{ $p->id }}">
+                                @csrf
+                                <button type="button" class="btn-success" title="Setujui"
+                                    onclick="confirmSetujui({{ $p->id }}, '{{ addslashes($p->barang->nama_barang) }}', '{{ addslashes($p->user->name) }}', {{ $p->jumlah ?? 1 }})">
+                                    Setujui
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('admin.peminjaman.tolak', $p->id) }}" id="form-tolak-{{ $p->id }}">
+                                @csrf
+                                <button type="button" class="btn-primary !bg-red-600 hover:!bg-red-700" title="Tolak"
+                                    onclick="confirmTolak({{ $p->id }}, '{{ addslashes($p->barang->nama_barang) }}', '{{ addslashes($p->user->name) }}')">
+                                    Tolak
+                                </button>
+                            </form>
+                        </div>
+                        @elseif(in_array($p->status, ['dipinjam', 'menunggu_konfirmasi']))
                         <form id="form-kembali-{{ $p->id }}" method="POST" action="{{ route('admin.peminjaman.kembali', $p->id) }}" class="flex justify-center">
                             @csrf
                             <button type="button" onclick="confirmKembaliBengkel({{ $p->id }}, '{{ addslashes($p->barang->nama_barang) }}', '{{ addslashes($p->user->name) }}', '{{ $p->status }}', {{ $p->jumlah ?? 1 }})" class="{{ $p->status === 'menunggu_konfirmasi' ? 'btn-primary' : 'btn-success' }}" title="{{ $p->status === 'menunggu_konfirmasi' ? 'Konfirmasi Kembali' : 'Proses Kembali' }}">
@@ -116,6 +139,44 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+function confirmSetujui(id, namaBarang, namaSiswa, jumlah) {
+    Swal.fire({
+        title: 'Setujui Peminjaman?',
+        html: `Anda akan menyetujui peminjaman <strong class="text-green-700">${jumlah} unit ${namaBarang}</strong> oleh <strong>${namaSiswa}</strong>.<br><br><span class="text-xs text-slate-500">Stok barang akan berkurang ${jumlah} unit secara otomatis.</span>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '✓ Ya, Setujui!',
+        cancelButtonText: 'Batal',
+        background: '#ffffff',
+        customClass: { popup: 'rounded-2xl' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('form-setujui-' + id).submit();
+        }
+    });
+}
+
+function confirmTolak(id, namaBarang, namaSiswa) {
+    Swal.fire({
+        title: 'Tolak Peminjaman?',
+        html: `Anda akan menolak pengajuan peminjaman <strong class="text-red-700">${namaBarang}</strong> oleh <strong>${namaSiswa}</strong>.<br><br><span class="text-xs text-slate-500">Stok barang tidak akan berubah.</span>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: '✕ Ya, Tolak!',
+        cancelButtonText: 'Batal',
+        background: '#ffffff',
+        customClass: { popup: 'rounded-2xl' }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('form-tolak-' + id).submit();
+        }
+    });
+}
+
 function confirmKembaliBengkel(id, namaBarang, namaSiswa, status, jumlah) {
     let confirmText = status === 'menunggu_konfirmasi' ? 'Ya, Konfirmasi Kembali!' : 'Ya, Proses Kembali!';
     let actionText = status === 'menunggu_konfirmasi' ? 'mengonfirmasi pengembalian' : 'memproses pengembalian';

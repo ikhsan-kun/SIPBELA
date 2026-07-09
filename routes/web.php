@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\BengkelNotificationController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
 use App\Http\Controllers\Admin\BarangController;
 use App\Http\Controllers\Admin\PeminjamanController as AdminPeminjaman;
@@ -69,6 +70,9 @@ Route::prefix('superadmin')
 
         // API Cek NIS Cepat
         Route::get('/api/check-nis/{nis}', [\App\Http\Controllers\Superadmin\DashboardController::class, 'checkNis'])->name('check_nis.api');
+
+        // API Statistik Peminjaman Real-time (polling dashboard)
+        Route::get('/api/statistik-realtime', [\App\Http\Controllers\Superadmin\DashboardController::class, 'statistikRealtime'])->name('statistik.realtime');
     });
 
 // ─── Auth Routes (Guest Only) ─────────────────────────────────────────────────
@@ -88,6 +92,7 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::middleware('auth')->group(function () {
     Route::get('/password/change', [\App\Http\Controllers\PasswordController::class, 'edit'])->name('password.change');
     Route::put('/password/update', [\App\Http\Controllers\PasswordController::class, 'update'])->name('password.update');
+    Route::post('/password/dismiss-prompt', [\App\Http\Controllers\PasswordController::class, 'dismissPrompt'])->name('password.dismiss_prompt');
 });
 
 // ─── Admin Bengkel Routes ─────────────────────────────────────────────────────
@@ -103,10 +108,13 @@ Route::prefix('admin')
         Route::get('/bab5', [AdminDashboard::class, 'bab5'])->name('bab5');
 
         // Manajemen Barang (CRUD Resource)
+        Route::post('barangs/{barang}/reset-maintenance', [BarangController::class, 'resetMaintenance'])->name('barangs.reset-maintenance');
         Route::resource('barangs', BarangController::class);
 
         // Manajemen Peminjaman & Pengembalian
         Route::get('/peminjaman', [AdminPeminjaman::class, 'index'])->name('peminjaman.index');
+        Route::post('/peminjaman/{id}/setujui', [AdminPeminjaman::class, 'setujuiPinjam'])->name('peminjaman.setujui');
+        Route::post('/peminjaman/{id}/tolak', [AdminPeminjaman::class, 'tolakPinjam'])->name('peminjaman.tolak');
         Route::post('/peminjaman/{id}/kembali', [AdminPeminjaman::class, 'prosesKembali'])->name('peminjaman.kembali');
 
         // Laporan
@@ -122,7 +130,7 @@ Route::prefix('admin')
 
 // ─── Siswa Routes ─────────────────────────────────────────────────────────────
 Route::prefix('siswa')
-    ->middleware(['auth', 'role:siswa', 'tkr'])
+    ->middleware(['auth', 'role:siswa', 'tkr', 'require.email'])
     ->name('siswa.')
     ->group(function () {
 
@@ -148,4 +156,38 @@ Route::prefix('siswa')
 
         // API Real-time Data
         Route::get('/api/data', [SiswaDashboard::class, 'apiData'])->name('api.data');
+
+        // Notifikasi Bengkel (Siswa) — tanpa require.email agar bell tetap bisa load
+        Route::get('/notifikasi', [BengkelNotificationController::class, 'fetch'])->name('notifikasi.fetch');
+        Route::post('/notifikasi/baca', [BengkelNotificationController::class, 'markAllRead'])->name('notifikasi.baca');
+        Route::get('/notifikasi/unread', [BengkelNotificationController::class, 'unreadCount'])->name('notifikasi.unread');
     });
+
+// ─── Notifikasi Admin Bengkel ─────────────────────────────────────────────────
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/notifikasi', [BengkelNotificationController::class, 'fetch'])->name('notifikasi.fetch');
+    Route::post('/notifikasi/baca', [BengkelNotificationController::class, 'markAllRead'])->name('notifikasi.baca');
+    Route::get('/notifikasi/unread', [BengkelNotificationController::class, 'unreadCount'])->name('notifikasi.unread');
+});
+
+// ─── Email Preview (hanya untuk local dev) ────────────────────────────────────
+if (app()->environment('local')) {
+    Route::get('/email-preview/jatuh-tempo', function () {
+        return new \App\Mail\JatuhTempoReminder(
+            namaSiswa:    'Reza Pahlevi',
+            namaBarang:   'Kunci Ring Set',
+            batasKembali: now()->addDay()->translatedFormat('d F Y'),
+            jumlah:       2,
+        );
+    })->name('email.preview.jatuh-tempo');
+
+    Route::get('/email-preview/keterlambatan', function () {
+        return new \App\Mail\KeterlambatanReminder(
+            namaSiswa:    'Reza Pahlevi',
+            namaBarang:   'Feler Gauge',
+            batasKembali: now()->subDays(3)->translatedFormat('d F Y'),
+            hariTerlambat: 3,
+            jumlah:       1,
+        );
+    })->name('email.preview.keterlambatan');
+}

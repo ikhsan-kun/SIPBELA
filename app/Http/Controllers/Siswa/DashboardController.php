@@ -71,6 +71,10 @@ class DashboardController extends Controller
             return response()->json(['success' => false, 'message' => 'Barang tidak tersedia.'], 422);
         }
 
+        if ($barang->butuhMaintenance()) {
+            return response()->json(['success' => false, 'message' => 'Barang tidak dapat dipinjam karena sedang menunggu jadwal servis.'], 422);
+        }
+
         $cart = session('cart_bengkel', []);
         
         // Reset keranjang lama jika formatnya array numerik

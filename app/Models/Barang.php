@@ -11,8 +11,17 @@ class Barang extends Model
         'nama_barang',
         'stok',
         'kondisi',
+        'jumlah_dipakai',
+        'batas_pemakaian',
         'deskripsi',
     ];
+
+    // Helper: Cek apakah butuh diservis/dikalibrasi
+    public function butuhMaintenance(): bool
+    {
+        return $this->batas_pemakaian > 0 && $this->jumlah_dipakai >= $this->batas_pemakaian;
+    }
+
 
     // Relasi: satu barang bisa dipinjam berkali-kali
     public function peminjamans()
@@ -26,9 +35,14 @@ class Barang extends Model
         return $this->peminjamans()->whereIn('status', ['dipinjam', 'menunggu_konfirmasi']);
     }
 
-    // Scope: barang yang tersedia (stok > 0 & kondisi baik)
+    // Scope: barang yang tersedia (stok > 0 & kondisi baik & belum batas servis)
     public function scopeTersedia($query)
     {
-        return $query->where('stok', '>', 0)->where('kondisi', 'baik');
+        return $query->where('stok', '>', 0)
+                     ->where('kondisi', 'baik')
+                     ->where(function($q) {
+                         $q->where('batas_pemakaian', 0)
+                           ->orWhereColumn('jumlah_dipakai', '<', 'batas_pemakaian');
+                     });
     }
 }

@@ -135,6 +135,24 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
         
+        /* Notification dropdown */
+        .notif-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 8px);
+            width: 340px; background: #fff; border: 1px solid #e2e8f0;
+            border-radius: 1rem; box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+            z-index: 1000; overflow: hidden;
+        }
+        .notif-dropdown.open { display: block; animation: fadeInDown 0.18s ease; }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .notif-item { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; transition: background 0.15s; cursor: pointer; }
+        .notif-item a { text-decoration: none; color: inherit; display: block; }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: #f8fafc; }
+        .notif-item.unread { background: #eff6ff; border-left: 3px solid #3b82f6; }
+        .notif-item.unread:hover { background: #dbeafe; }
         /* Sidebar Styles */
         @media (min-width: 1024px) {
             .sidebar-active main { margin-left: 16rem; }
@@ -249,6 +267,32 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
                         </a>
 
+                        @if(in_array(auth()->user()->role, ['siswa', 'admin_bengkel']))
+                        <!-- Bell Notifikasi -->
+                        <div class="relative" id="notif-wrapper">
+                            <button id="notif-btn" onclick="toggleNotifDropdown()" title="Notifikasi"
+                                class="relative p-2 text-slate-400 hover:text-blue-500 rounded-lg transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                </svg>
+                                <span id="notif-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border border-white hidden">0</span>
+                            </button>
+                            <!-- Dropdown Panel -->
+                            <div id="notif-dropdown" class="notif-dropdown">
+                                <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50">
+                                    <h3 class="font-bold text-slate-800 text-sm">🔔 Notifikasi</h3>
+                                    <button onclick="markAllRead()" class="text-[11px] text-blue-600 hover:underline font-medium">Tandai semua dibaca</button>
+                                </div>
+                                <div id="notif-list" class="max-h-80 overflow-y-auto custom-scrollbar">
+                                    <div class="text-center py-8 text-slate-400 text-sm" id="notif-empty">
+                                        <svg class="w-10 h-10 mx-auto mb-2 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                                        Tidak ada notifikasi
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         @if(auth()->user()->role === 'siswa')
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -362,6 +406,7 @@
     }, 4000);
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Handler form hapus (Delete)
         const deleteForms = document.querySelectorAll('.delete-form');
         deleteForms.forEach(form => {
             form.addEventListener('submit', function(e) {
@@ -383,7 +428,174 @@
                 });
             });
         });
+
+        // Handler form Reset Maintenance
+        const resetForms = document.querySelectorAll('.reset-maintenance-form');
+        resetForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const message = this.getAttribute('data-message') || 'Reset siklus pemakaian menjadi 0? Pastikan alat sudah diservis.';
+                Swal.fire({
+                    title: 'Konfirmasi Reset Siklus Servis',
+                    text: message,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#2563eb', // Blue
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Ya, Sudah Diservis!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.submit();
+                    }
+                });
+            });
+        });
     });
+
+    // ── Notification System ────────────────────────────────────────────────────
+    @if(auth()->check() && in_array(auth()->user()->role, ['siswa', 'admin_bengkel']))
+    const _notifCsrf = document.querySelector('meta[name="csrf-token"]').content;
+    const _notifUrl  = '{{ auth()->user()->role === "siswa" ? route("siswa.notifikasi.fetch") : route("admin.notifikasi.fetch") }}';
+    const _markUrl   = '{{ auth()->user()->role === "siswa" ? route("siswa.notifikasi.baca") : route("admin.notifikasi.baca") }}';
+    let _notifOpen   = false;
+
+    function toggleNotifDropdown() {
+        _notifOpen = !_notifOpen;
+        document.getElementById('notif-dropdown').classList.toggle('open', _notifOpen);
+        if (_notifOpen) {
+            loadNotifications();
+        }
+    }
+
+    // Close when clicking outside
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('notif-wrapper');
+        if (wrapper && !wrapper.contains(e.target) && _notifOpen) {
+            _notifOpen = false;
+            document.getElementById('notif-dropdown').classList.remove('open');
+        }
+    });
+
+    function loadNotifications() {
+        fetch(_notifUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            renderNotifications(data.notifications, data.unread_count);
+        }).catch(() => {});
+    }
+
+    // Mapping tipe notif ke URL aksi berdasarkan role
+    const _notifActionUrls = {
+        @if(auth()->check() && auth()->user()->role === 'admin_bengkel')
+        'request_submitted': '{{ route("admin.peminjaman.index") }}',
+        'return_submitted':  '{{ route("admin.peminjaman.index") }}',
+        @elseif(auth()->check() && auth()->user()->role === 'siswa')
+        'request_submitted': '{{ route("siswa.riwayat") }}',
+        'request_approved':  '{{ route("siswa.riwayat") }}',
+        'request_rejected':  '{{ route("siswa.riwayat") }}',
+        'return_confirmed':  '{{ route("siswa.riwayat") }}',
+        'due_soon':          '{{ route("siswa.riwayat") }}',
+        @endif
+    };
+    const _markOneUrl = '{{ auth()->check() && auth()->user()->role === "admin_bengkel" ? route("admin.notifikasi.baca") : (auth()->check() && auth()->user()->role === "siswa" ? route("siswa.notifikasi.baca") : "#") }}';
+
+    function goToNotifAction(type) {
+        const url = _notifActionUrls[type];
+        // Tandai semua dibaca dulu, lalu arahkan ke halaman aksi
+        fetch(_markUrl, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': _notifCsrf, 'Accept': 'application/json' }
+        }).then(() => {
+            if (url) window.location.href = url;
+        }).catch(() => {
+            if (url) window.location.href = url;
+        });
+    }
+
+    function renderNotifications(notifications, unreadCount) {
+        const badge  = document.getElementById('notif-badge');
+        const list   = document.getElementById('notif-list');
+        const empty  = document.getElementById('notif-empty');
+
+        if (badge) {
+            badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            badge.classList.toggle('hidden', unreadCount === 0);
+        }
+
+        if (!notifications || notifications.length === 0) {
+            if (empty) empty.style.display = '';
+            return;
+        }
+        if (empty) empty.style.display = 'none';
+
+        const typeIcons = {
+            'request_submitted': '⏳',
+            'request_approved':  '✅',
+            'request_rejected':  '❌',
+            'return_submitted':  '🔄',
+            'return_confirmed':  '✅',
+            'due_soon':          '⚠️',
+        };
+
+        list.innerHTML = notifications.map(n => {
+            const icon     = typeIcons[n.type] || '🔔';
+            const isUnread = !n.read_at;
+            const timeAgo  = formatTimeAgo(n.created_at);
+            const hasAction = !!_notifActionUrls[n.type];
+            const clickAttr = hasAction ? `onclick="goToNotifAction('${n.type}')" style="cursor:pointer"` : '';
+            return `<div class="notif-item ${isUnread ? 'unread' : ''}" ${clickAttr}>
+                <div class="flex items-start gap-2">
+                    <span class="text-lg flex-shrink-0">${icon}</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-xs font-semibold text-slate-800 leading-tight">${n.title}${hasAction ? ' <span class="text-blue-400 text-[10px]">→ Lihat</span>' : ''}</p>
+                        <p class="text-xs text-slate-500 mt-0.5 leading-snug">${n.message}</p>
+                        <p class="text-[10px] text-slate-400 mt-1">${timeAgo}</p>
+                    </div>
+                    ${isUnread ? '<span class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1"></span>' : ''}
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function markAllRead() {
+        fetch(_markUrl, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': _notifCsrf, 'Accept': 'application/json' }
+        }).then(() => loadNotifications()).catch(() => {});
+    }
+
+    function formatTimeAgo(dateStr) {
+        if (!dateStr) return '';
+        const now  = new Date();
+        const date = new Date(dateStr);
+        const diff = Math.floor((now - date) / 1000);
+        if (diff < 60) return 'Baru saja';
+        if (diff < 3600) return Math.floor(diff / 60) + ' menit lalu';
+        if (diff < 86400) return Math.floor(diff / 3600) + ' jam lalu';
+        return Math.floor(diff / 86400) + ' hari lalu';
+    }
+
+    // Poll unread count every 30 seconds
+    function pollUnreadCount() {
+        const unreadUrl = '{{ auth()->user()->role === "siswa" ? route("siswa.notifikasi.unread") : route("admin.notifikasi.unread") }}';
+        fetch(unreadUrl, { headers: { 'Accept': 'application/json' } })
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('notif-badge');
+            if (badge) {
+                badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
+                badge.classList.toggle('hidden', data.unread_count === 0);
+            }
+        }).catch(() => {});
+    }
+
+    // Initial poll + set interval
+    document.addEventListener('DOMContentLoaded', () => {
+        pollUnreadCount();
+        setInterval(pollUnreadCount, 30000);
+    });
+    @endif
 </script>
 @stack('scripts')
 </body>

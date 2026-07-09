@@ -41,8 +41,8 @@
                     <th class="table-th">Kode</th>
                     <th class="table-th">Nama Barang</th>
                     <th class="table-th">Stok</th>
+                    <th class="table-th">Pemakaian</th>
                     <th class="table-th">Kondisi</th>
-                    <th class="table-th">Deskripsi</th>
                     <th class="table-th text-center">Aksi</th>
                 </tr>
             </thead>
@@ -60,16 +60,39 @@
                         </span>
                     </td>
                     <td class="table-td">
+                        @if($barang->batas_pemakaian > 0)
+                            <div class="w-24">
+                                <div class="flex justify-between text-[10px] font-bold mb-1 {{ $barang->butuhMaintenance() ? 'text-red-600' : 'text-slate-500' }}">
+                                    <span>{{ $barang->jumlah_dipakai }}x</span>
+                                    <span>{{ $barang->batas_pemakaian }}x</span>
+                                </div>
+                                <div class="w-full bg-slate-200 rounded-full h-1.5">
+                                    @php $pct = min(($barang->jumlah_dipakai / $barang->batas_pemakaian) * 100, 100); @endphp
+                                    <div class="h-1.5 rounded-full {{ $barang->butuhMaintenance() ? 'bg-red-500 shadow-sm shadow-red-200' : 'bg-blue-500' }}" style="width: {{ $pct }}%"></div>
+                                </div>
+                            </div>
+                        @else
+                            <span class="text-xs text-slate-400 italic">Tanpa batas</span>
+                        @endif
+                    </td>
+                    <td class="table-td">
                         <span class="badge-{{ $barang->kondisi }}">{{ ucfirst($barang->kondisi) }}</span>
                     </td>
-                    <td class="table-td text-slate-500 max-w-xs truncate">{{ $barang->deskripsi ?? '-' }}</td>
                     <td class="table-td">
                         <div class="flex items-center justify-center gap-2">
+                            @if($barang->butuhMaintenance())
+                            <form method="POST" action="{{ route('admin.barangs.reset-maintenance', $barang) }}" class="inline reset-maintenance-form" data-message="Reset siklus pemakaian untuk '{{ $barang->nama_barang }}' menjadi 0? Pastikan alat sudah diservis.">
+                                @csrf
+                                <button type="submit" class="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors" title="Reset Siklus Servis">
+                                    🔧 Reset
+                                </button>
+                            </form>
+                            @endif
                             <a href="{{ route('admin.barangs.edit', $barang) }}" class="btn-warning" title="Edit Barang">
                                 Edit
                             </a>
                             <form method="POST" action="{{ route('admin.barangs.destroy', $barang) }}"
-                                class="delete-form" data-message="Hapus barang {{ $barang->nama_barang }}? Tindakan ini tidak dapat dibatalkan.">
+                                class="delete-form inline" data-message="Hapus barang {{ $barang->nama_barang }}? Tindakan ini tidak dapat dibatalkan.">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-danger" title="Hapus Barang">

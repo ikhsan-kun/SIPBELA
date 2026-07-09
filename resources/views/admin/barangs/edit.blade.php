@@ -31,15 +31,31 @@
                 @error('nama_barang')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
             </div>
 
-            <div class="mt-4">
-                <label class="block text-sm font-medium text-slate-700 mb-1.5">Kondisi <span class="text-red-500">*</span></label>
-                <select name="kondisi"
-                    class="w-full border @error('kondisi') border-red-400 bg-red-50 @else border-slate-200 @enderror rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="baik"       {{ old('kondisi', $barang->kondisi) === 'baik'       ? 'selected' : '' }}>Baik</option>
-                    <option value="rusak"      {{ old('kondisi', $barang->kondisi) === 'rusak'      ? 'selected' : '' }}>Rusak</option>
-                    <option value="diperbaiki" {{ old('kondisi', $barang->kondisi) === 'diperbaiki' ? 'selected' : '' }}>Sedang Diperbaiki</option>
-                </select>
-                @error('kondisi')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+            <div class="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">Kondisi <span class="text-red-500">*</span></label>
+                    <select name="kondisi"
+                        class="w-full border @error('kondisi') border-red-400 bg-red-50 @else border-slate-200 @enderror rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="baik"       {{ old('kondisi', $barang->kondisi) === 'baik'       ? 'selected' : '' }}>Baik</option>
+                        <option value="rusak"      {{ old('kondisi', $barang->kondisi) === 'rusak'      ? 'selected' : '' }}>Rusak</option>
+                        <option value="diperbaiki" {{ old('kondisi', $barang->kondisi) === 'diperbaiki' ? 'selected' : '' }}>Sedang Diperbaiki</option>
+                    </select>
+                    @error('kondisi')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                        Batas Pemakaian 
+                        <span class="group relative inline-block ml-1 cursor-help text-blue-500 hover:text-blue-700">
+                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-48 rounded bg-slate-800 px-2 py-1 text-center text-xs text-white group-hover:block z-10">Batas maksimal dipinjam sebelum peringatan servis muncul. Isi 0 jika tanpa batas.</span>
+                        </span>
+                        <span class="text-red-500">*</span>
+                    </label>
+                    <input type="number" name="batas_pemakaian" value="{{ old('batas_pemakaian', $barang->batas_pemakaian) }}" min="0"
+                        class="w-full border @error('batas_pemakaian') border-red-400 bg-red-50 @else border-slate-200 @enderror rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    @error('batas_pemakaian')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                </div>
             </div>
 
             <div class="mt-4">

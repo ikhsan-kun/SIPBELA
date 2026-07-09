@@ -65,66 +65,7 @@ class LaporanController extends Controller
 
         $data = $query->orderBy('tanggal_pinjam', 'asc')->get();
 
-        $filename = "Laporan_Peminjaman_Bengkel_" . date('Y-m-d') . ".xls";
-        
-        $headers = [
-            "Content-Type"        => "application/vnd.ms-excel",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Expires"             => "0"
-        ];
-
-        $callback = function() use($data) {
-            $output = fopen('php://output', 'w');
-            
-            // Start HTML Table for Excel
-            echo '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">';
-            echo '<head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /><style>table { border-collapse: collapse; } th { background-color: #f2f2f2; border: 1px solid #000; } td { border: 1px solid #000; }</style></head><body>';
-            echo '<h3>LAPORAN PEMINJAMAN ALAT BENGKEL</h3>';
-            echo '<p>Tanggal Cetak: ' . date('d/m/Y H:i') . '</p>';
-            echo '<table>';
-            echo '<thead><tr>';
-            echo '<th>ID</th><th>Nama Siswa</th><th>Nama Alat</th><th>Kode Alat</th><th>Tgl Pinjam</th><th>Tgl Kembali</th><th>Status</th>';
-            echo '</tr></thead><tbody>';
-
-            foreach ($data as $item) {
-                echo '<tr>';
-                echo '<td>' . $item->id . '</td>';
-                echo '<td>' . $item->user->name . '</td>';
-                echo '<td>' . $item->barang->nama_barang . '</td>';
-                echo '<td>' . $item->barang->kode_barang . '</td>';
-                echo '<td>' . $item->tanggal_pinjam->format('d/m/Y') . '</td>';
-                echo '<td>' . ($item->tanggal_kembali ? $item->tanggal_kembali->format('d/m/Y') : 'Belum Kembali') . '</td>';
-                echo '<td>' . ucfirst($item->status) . '</td>';
-                echo '</tr>';
-            }
-            echo '</tbody></table>';
-            
-            // Tambahan tempat tanda tangan
-            echo '<br><br>';
-            echo '<table style="border: none;">';
-            echo '<tr>';
-            echo '<td colspan="5" style="border: none;"></td>';
-            echo '<td colspan="2" style="border: none; text-align: center;">Mengetahui,</td>';
-            echo '</tr>';
-            echo '<tr>';
-            echo '<td colspan="5" style="border: none;"></td>';
-            echo '<td colspan="2" style="border: none; text-align: center;">Admin Bengkel</td>';
-            echo '</tr>';
-            echo '<tr>';
-            echo '<td colspan="5" style="border: none;"></td>';
-            echo '<td colspan="2" style="border: none; height: 60px;"></td>'; // Space for signature
-            echo '</tr>';
-            echo '<tr>';
-            echo '<td colspan="5" style="border: none;"></td>';
-            echo '<td colspan="2" style="border: none; text-align: center;">(.........................................)</td>';
-            echo '</tr>';
-            echo '</table>';
-
-            echo '</body></html>';
-            fclose($output);
-        };
-
-        return response()->stream($callback, 200, $headers);
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.laporan.pdf', compact('data'));
+        return $pdf->download('Laporan_Peminjaman_Bengkel_' . date('Y-m-d') . '.pdf');
     }
 }

@@ -37,11 +37,12 @@ class BarangController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'kode_barang'  => 'required|string|max:20|unique:barangs,kode_barang',
-            'nama_barang'  => 'required|string|max:100',
-            'stok'         => 'required|integer|min:0',
-            'kondisi'      => 'required|in:baik,rusak,diperbaiki',
-            'deskripsi'    => 'nullable|string|max:500',
+            'kode_barang'     => 'required|string|max:20|unique:barangs,kode_barang',
+            'nama_barang'     => 'required|string|max:100',
+            'stok'            => 'required|integer|min:0',
+            'kondisi'         => 'required|in:baik,rusak,diperbaiki',
+            'batas_pemakaian' => 'required|integer|min:0',
+            'deskripsi'       => 'nullable|string|max:500',
         ]);
 
         Barang::create($validated);
@@ -58,11 +59,12 @@ class BarangController extends Controller
     public function update(Request $request, Barang $barang)
     {
         $validated = $request->validate([
-            'kode_barang'  => "required|string|max:20|unique:barangs,kode_barang,{$barang->id}",
-            'nama_barang'  => 'required|string|max:100',
-            'stok'         => 'required|integer|min:0',
-            'kondisi'      => 'required|in:baik,rusak,diperbaiki',
-            'deskripsi'    => 'nullable|string|max:500',
+            'kode_barang'     => "required|string|max:20|unique:barangs,kode_barang,{$barang->id}",
+            'nama_barang'     => 'required|string|max:100',
+            'stok'            => 'required|integer|min:0',
+            'kondisi'         => 'required|in:baik,rusak,diperbaiki',
+            'batas_pemakaian' => 'required|integer|min:0',
+            'deskripsi'       => 'nullable|string|max:500',
         ]);
 
         $barang->update($validated);
@@ -83,5 +85,15 @@ class BarangController extends Controller
 
         return redirect()->route('admin.barangs.index')
             ->with('success', "Barang \"{$nama}\" berhasil dihapus.");
+    }
+
+    public function resetMaintenance(Barang $barang)
+    {
+        $barang->update([
+            'jumlah_dipakai' => 0,
+            'kondisi' => 'baik'
+        ]);
+
+        return back()->with('success', "Siklus pemakaian barang \"{$barang->nama_barang}\" berhasil di-reset menjadi 0 dan kondisinya kembali 'Baik'. Alat siap digunakan.");
     }
 }

@@ -74,6 +74,50 @@
     </div>
 </div>
 
+<!-- Widget Predictive Maintenance (Tampil jika ada alat yang butuh servis) -->
+@if($barang_maintenance->count() > 0)
+<div class="mb-6 p-1 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-rose-600 shadow-sm shadow-red-200/50">
+    <div class="bg-white rounded-xl p-5">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-800 text-lg">Peringatan Servis / Kalibrasi Alat</h3>
+                <p class="text-sm text-slate-500">Alat berikut telah mencapai atau melewati batas maksimal siklus pemakaian.</p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @foreach($barang_maintenance as $bm)
+            <div class="border border-red-100 bg-red-50/30 rounded-xl p-4 flex flex-col justify-between">
+                <div>
+                    <h4 class="font-bold text-red-800">{{ $bm->nama_barang }}</h4>
+                    <p class="text-xs text-red-600/80 mb-3">{{ $bm->kode_barang }}</p>
+                    
+                    <div class="flex justify-between text-xs text-red-900 font-medium mb-1">
+                        <span>Dipakai: {{ $bm->jumlah_dipakai }}x</span>
+                        <span>Batas: {{ $bm->batas_pemakaian }}x</span>
+                    </div>
+                    <div class="w-full bg-red-200 rounded-full h-1.5 mb-4 overflow-hidden">
+                        @php $pct = min(($bm->jumlah_dipakai / $bm->batas_pemakaian) * 100, 100); @endphp
+                        <div class="bg-red-600 h-1.5 rounded-full" style="width: {{ $pct }}%"></div>
+                    </div>
+                </div>
+                
+                <form action="{{ route('admin.barangs.reset-maintenance', $bm->id) }}" method="POST" class="reset-maintenance-form" data-message="Apakah '{{ $bm->nama_barang }}' sudah diservis dan siap digunakan kembali? Siklus pemakaian akan di-reset ke 0.">
+                    @csrf
+                    <button type="submit" class="w-full text-center py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-lg transition-colors">
+                        Tandai Sudah Diservis
+                    </button>
+                </form>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</div>
+@endif
+
 <!-- Bottom Section -->
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 

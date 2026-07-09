@@ -117,8 +117,7 @@ class PeminjamanController extends Controller
                         continue;
                     }
 
-                    // Kurangi stok buku sejumlah qty
-                    $buku->decrement('stok', $qty);
+                    // Tidak lagi memotong stok di sini. Stok dipotong saat disetujui admin.
 
                     // Buat 1 record peminjaman dengan jumlah
                     PerpusPeminjaman::create([
@@ -127,7 +126,7 @@ class PeminjamanController extends Controller
                         'jumlah'         => $qty,
                         'tanggal_pinjam' => $tanggalPinjam,
                         'batas_kembali'  => $batasKembali,
-                        'status'         => 'dipinjam',
+                        'status'         => 'menunggu_persetujuan',
                         'catatan'        => $validated['catatan'] ?? null,
                     ]);
 
@@ -139,10 +138,10 @@ class PeminjamanController extends Controller
             session()->forget('cart_perpus');
 
             if (!empty($gagal) && empty($berhasil)) {
-                return back()->with('error', 'Semua peminjaman gagal: ' . implode(', ', $gagal));
+                return back()->with('error', 'Semua pengajuan peminjaman gagal: ' . implode(', ', $gagal));
             }
 
-            $message = count($berhasil) . ' buku berhasil dipinjam. Batas pengembalian: ' . \Carbon\Carbon::parse($batasKembali)->format('d M Y') . '.';
+            $message = count($berhasil) . ' pengajuan peminjaman buku berhasil dikirim. Silakan tunggu konfirmasi Admin Perpus.';
             if (!empty($gagal)) {
                 $message .= ' Gagal: ' . implode(', ', $gagal);
             }

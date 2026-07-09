@@ -30,6 +30,13 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $request->session()->flash('login_success', true);
 
+            // Cek apakah password masih default (sama dengan username)
+            if (\Illuminate\Support\Facades\Hash::check(Auth::user()->username, Auth::user()->password)) {
+                $request->session()->put('must_change_password', true);
+            } else {
+                $request->session()->forget('must_change_password');
+            }
+
             // Redirect by role
             $role = Auth::user()->role;
             if ($role === 'superadmin') {

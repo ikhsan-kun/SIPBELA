@@ -120,6 +120,7 @@ Route::prefix('admin')
         // Laporan
         Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
         Route::get('/laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
+        Route::get('/laporan/statistik', [LaporanController::class, 'statistik'])->name('laporan.statistik');
 
         // Manajemen User (Siswa) - Read-only untuk Admin Bengkel
         Route::get('/users', [UserController::class, 'index'])->name('users.index');

@@ -188,6 +188,33 @@
             if (data.success) {
                 // Swal.fire({ icon: 'success', title: 'Berhasil', text: data.message, timer: 1500, showConfirmButton: false });
                 updateCartUI(); // Segera refresh dashboard untuk update tombol dan stok via API
+            } else if (data.blocked) {
+                // Siswa masih punya pinjaman aktif — tampilkan alert khusus premium
+                Swal.fire({
+                    title: '<span style="font-size:1.05rem;font-weight:800;color:#1e293b">🔒 Peminjaman Dikunci</span>',
+                    html: `
+                        <div style="font-size:0.83rem;color:#475569;line-height:1.65;text-align:center">
+                            <p style="margin-bottom:14px">${data.message}</p>
+                            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:11px 14px;margin-bottom:4px">
+                                <p style="font-size:0.77rem;color:#991b1b;font-weight:600">
+                                    ⚠️ Peraturan sekolah: setiap siswa hanya boleh memiliki
+                                    <strong>1 sesi peminjaman aktif</strong> pada satu waktu.
+                                </p>
+                            </div>
+                        </div>`,
+                    icon: 'error',
+                    showCancelButton: true,
+                    confirmButtonText: '📋 Lihat Riwayat & Kembalikan',
+                    cancelButtonText: 'Tutup',
+                    confirmButtonColor: '#2563eb',
+                    cancelButtonColor: '#64748b',
+                    reverseButtons: true,
+                    width: '420px',
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        window.location.href = '{{ route("siswa.riwayat") }}';
+                    }
+                });
             } else {
                 Swal.fire({ icon: 'error', title: 'Gagal', text: data.message });
             }

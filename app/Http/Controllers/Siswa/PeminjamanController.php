@@ -16,6 +16,16 @@ class PeminjamanController extends Controller
      */
     public function create(Request $request)
     {
+        // ── Cek pinjaman aktif ────────────────────────────────────────────
+        $pinjamanAktif = Peminjaman::with('barang')
+            ->where('user_id', auth()->id())
+            ->whereIn('status', ['dipinjam', 'menunggu_konfirmasi'])
+            ->get();
+
+        if ($pinjamanAktif->isNotEmpty()) {
+            return view('siswa.peminjaman.blocked', compact('pinjamanAktif'));
+        }
+
         $cart = session('cart_bengkel', []);
         
         // Handling struktur keranjang lama (array numerik) jika masih nyangkut
@@ -45,6 +55,15 @@ class PeminjamanController extends Controller
             'tanggal_pinjam' => 'required|date|after_or_equal:today',
             'catatan'        => 'nullable|string|max:300',
         ]);
+
+        // ── Validasi final: tidak boleh ada pinjaman aktif ────────────────
+        $pinjamanAktif = Peminjaman::where('user_id', auth()->id())
+            ->whereIn('status', ['dipinjam', 'menunggu_konfirmasi'])
+            ->count();
+
+        if ($pinjamanAktif > 0) {
+            return back()->with('error', 'Anda masih memiliki pinjaman alat yang belum dikembalikan. Kembalikan terlebih dahulu sebelum meminjam lagi.');
+        }
 
         $cart = session('cart_bengkel', []);
 

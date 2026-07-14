@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Siswa;
 use App\Http\Controllers\Controller;
 use App\Models\Barang;
 use App\Models\Materi;
+use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -65,6 +66,19 @@ class DashboardController extends Controller
         ]);
 
         $barang = Barang::findOrFail($request->barang_id);
+
+        // ── Cek pinjaman aktif ────────────────────────────────────────────
+        $pinjamanAktif = Peminjaman::where('user_id', auth()->id())
+            ->whereIn('status', ['dipinjam', 'menunggu_konfirmasi'])
+            ->count();
+
+        if ($pinjamanAktif > 0) {
+            return response()->json([
+                'success' => false,
+                'blocked' => true,
+                'message' => 'Anda masih memiliki pinjaman alat yang belum dikembalikan. Harap kembalikan dulu sebelum meminjam lagi.',
+            ], 422);
+        }
 
         // Cek ketersediaan
         if ($barang->stok <= 0 || $barang->kondisi !== 'baik') {
